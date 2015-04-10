@@ -37,7 +37,7 @@ public class MainActivity extends ActionBarActivity {
 
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
-    private static final int SHORTCUT_ID = 3000;
+    private static final int SHORTCUT_NOTIFICATION_ID = 3000;
     private static EditText metTextHint;
     private static ListView mlvTextMatches;
     private static Spinner msTextMatches;
@@ -213,6 +213,10 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(SHORTCUT_NOTIFICATION_ID);
+
         bindService(new Intent(this, ShortcutService.class), mConnection,
                 Context.BIND_AUTO_CREATE);
 
@@ -262,7 +266,7 @@ public class MainActivity extends ActionBarActivity {
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // SHORTCUT_ID allows you to update the notification later on.
-        mNotificationManager.notify(SHORTCUT_ID, mBuilder.build());
+        mNotificationManager.notify(SHORTCUT_NOTIFICATION_ID, mBuilder.build());
     }
 
 }

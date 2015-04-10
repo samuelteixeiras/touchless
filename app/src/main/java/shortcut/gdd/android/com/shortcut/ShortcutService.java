@@ -109,7 +109,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 case MSG_RECOGNIZER_CANCEL:
                     if (mIsStreamSolo)
                     {
-                        mAudioManager.setStreamMute(AudioManager.STREAM_RING, false);
+                        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
                         mIsStreamSolo = false;
                     }
                     target.mSpeechRecognizer.cancel();
@@ -118,7 +118,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                     break;
 
                 case MSG_STOP_RECOGNIZER_CANCEL:
-                    mAudioManager.setStreamMute(AudioManager.STREAM_RING, false);
+                    mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
                     mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
                     target.mSpeechRecognizer.cancel();
                     target.mIsListening = false;
@@ -354,7 +354,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     public void startListening(){
 
         mIsListening = false;
-        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
+        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
         Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
 
         try
