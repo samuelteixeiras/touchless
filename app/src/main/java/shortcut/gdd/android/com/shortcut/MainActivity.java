@@ -2,18 +2,15 @@ package shortcut.gdd.android.com.shortcut;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
-import android.app.SearchManager;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.net.Uri;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.speech.RecognizerIntent;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -24,13 +21,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.Spinner;
-import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -38,10 +33,7 @@ public class MainActivity extends ActionBarActivity {
     private static final String LOG_TAG = MainActivity.class.getSimpleName();
     private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
     private static final int SHORTCUT_NOTIFICATION_ID = 3000;
-    private static EditText metTextHint;
-    private static ListView mlvTextMatches;
-    private static Spinner msTextMatches;
-    private static Button mbtSpeak;
+    private static ListView mListView;
 
     private ShortcutService myService;
 
@@ -52,6 +44,8 @@ public class MainActivity extends ActionBarActivity {
     static boolean mBound;
 
     static View rootView;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -94,6 +88,8 @@ public class MainActivity extends ActionBarActivity {
      */
     public static class PlaceholderFragment extends Fragment {
 
+        ArrayAdapter<String> mShortcutAdapter;
+
         public PlaceholderFragment() {
         }
 
@@ -102,78 +98,31 @@ public class MainActivity extends ActionBarActivity {
                                  Bundle savedInstanceState) {
             rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-            metTextHint = (EditText) rootView.findViewById(R.id.etTextHint);
-            mlvTextMatches = (ListView) rootView.findViewById(R.id.lvTextMatches);
+            String[] data = {
+                    "Read messages",
+                    "Silent phone",
+                    "Set Alarm",
+                    "Control Camera Light",
+                    "Control Wifi",
+                    "Control 3G"
+            };
+            List<String> weekForecast = new ArrayList<String>(Arrays.asList(data));
 
+            mShortcutAdapter =
+                    new ArrayAdapter<String>(
+                            getActivity(), // The current context (this activity)
+                            R.layout.list_item_shortcut, // The name of the layout ID.
+                            R.id.list_item_text, // The ID of the textview to populate.
+                            weekForecast);
+            mListView = (ListView) rootView.findViewById(R.id.listview_shorcut);
+
+            ListView listView = (ListView) rootView.findViewById(R.id.listview_shorcut);
+            listView.setAdapter(mShortcutAdapter);
             return rootView;
         }
     }
 
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (requestCode == VOICE_RECOGNITION_REQUEST_CODE)
 
-            //If Voice recognition is successful then it returns RESULT_OK
-            if(resultCode == RESULT_OK) {
-
-                ArrayList<String> textMatchList = data
-                        .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-
-                if (!textMatchList.isEmpty()) {
-                    // If first Match contains the 'search' word
-                    // Then start web search.
-                    if (textMatchList.get(0).contains("search")) {
-
-                        String searchQuery = textMatchList.get(0);
-                        searchQuery = searchQuery.replace("search","");
-                        Intent search = new Intent(Intent.ACTION_WEB_SEARCH);
-                        search.putExtra(SearchManager.QUERY, searchQuery);
-                        startActivity(search);
-                    } else {
-
-                        if (textMatchList.get(0).contains("call carol")) {
-                            Intent callIntent = new Intent(Intent.ACTION_CALL);
-                            callIntent.setData(Uri.parse("tel:0834613436"));
-                            startActivity(callIntent);
-                        }
-
-                        if (textMatchList.get(0).contains("open app")) {
-                            Intent sendIntent = new Intent();
-                            sendIntent.setAction(Intent.ACTION_SEND);
-                            sendIntent.putExtra(Intent.EXTRA_TEXT, "This is my text to send.");
-                            sendIntent.setType("text/plain");
-                            sendIntent.setPackage("com.whatsapp");
-                            startActivity(sendIntent);
-                        }
-
-                        // populate the Matches
-                        mlvTextMatches
-                                .setAdapter(new ArrayAdapter<String>(this,
-                                        android.R.layout.simple_list_item_1,
-                                        textMatchList));
-                    }
-
-                }
-                //Result code for various error.
-            }else if(resultCode == RecognizerIntent.RESULT_AUDIO_ERROR){
-                showToastMessage("Audio Error");
-            }else if(resultCode == RecognizerIntent.RESULT_CLIENT_ERROR){
-                showToastMessage("Client Error");
-            }else if(resultCode == RecognizerIntent.RESULT_NETWORK_ERROR){
-                showToastMessage("Network Error");
-            }else if(resultCode == RecognizerIntent.RESULT_NO_MATCH){
-                showToastMessage("No Match");
-            }else if(resultCode == RecognizerIntent.RESULT_SERVER_ERROR){
-                showToastMessage("Server Error");
-            }
-        super.onActivityResult(requestCode, resultCode, data);
-    }
-    /**
-     * Helper method to show the toast message
-     **/
-    void showToastMessage(String message){
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
-    }
 
     /**
      * Class for interacting with the main interface of the service.

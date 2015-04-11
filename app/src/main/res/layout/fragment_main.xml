@@ -2,27 +2,35 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical" >
+    android:orientation="vertical"
+    tools:context="shortcut.gdd.android.com.shortcut.MainActivity$PlaceholderFragment">
 
-    <EditText
-        android:id="@+id/etTextHint"
-        android:gravity="top"
-        android:inputType="textMultiLine"
-        android:lines="1"
+
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/etSearchHint"/>
+        android:layout_height="match_parent"
+        android:layout_weight="7">
+
+        <Button
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Start Touchless"
+            android:gravity="center_vertical|center_horizontal"
+            android:textAppearance="?android:textAppearanceLarge"
+
+            android:layout_gravity="center" />
+
+    </FrameLayout>
 
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/tvTextMatches"
-        android:textStyle="bold" />
+
 
     <ListView
-        android:id="@+id/lvTextMatches"
+        style="@style/ShortCutListStyle"
+        android:id="@+id/listview_shorcut"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="match_parent"
+        android:layout_weight="3"
+        android:divider="@null" />
 
 </LinearLayout>
