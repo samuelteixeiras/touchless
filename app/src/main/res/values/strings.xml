@@ -5,20 +5,36 @@
     <string name="btSpeak">Speak</string>
     <string name="menu_settings">Settings</string>
     <string name="title_activity_voice_recognition">Voice Recognition</string>
-    <string name="tvTextMatches">Text Matches</string>
-    <string name="sNoOfMatches">No of Matches</string>
-    <string name="etSearchHint">Speech hint here</string>
 
-    <string-array name="saNoOfMatches">
-        <item>1</item>
-        <item>2</item>
-        <item>3</item>
-        <item>4</item>
-        <item>5</item>
-        <item>6</item>
-        <item>7</item>
-        <item>8</item>
-        <item>9</item>
-        <item>10</item>
-    </string-array>
+
+    <string name="pref_cam_key" transatable="false">cam_light</string>
+    <string name="pref_cam_label" >Control Camera Light</string>
+    <string name="pref_cam_default" transatable="false">true</string>
+    <string name="pref_cam_command" transatable="false">light on for activate and light off for deactivate</string>
+
+    <string name="pref_messages_key" transatable="false">messages</string>
+    <string name="pref_messages_label" >Read messages</string>
+    <string name="pref_messages_default" transatable="false">true</string>
+    <string name="pref_messages_command" transatable="false">read messages</string>
+
+    <string name="pref_silent_phone_key" transatable="false">silent_phone</string>
+    <string name="pref_silent_phone_label" >Silent phone</string>
+    <string name="pref_silent_phone_default" transatable="false">true</string>
+    <string name="pref_silent_phone_command" transatable="false">silent mode</string>
+
+    <string name="pref_set_alarm_key" transatable="false">set_alarm</string>
+    <string name="pref_set_alarm_label" >Set Alarm</string>
+    <string name="pref_set_alarm_default" transatable="false">true</string>
+    <string name="pref_set_alarm_command" transatable="false"></string>
+
+    <string name="pref_control_wifi_key" transatable="false">control_wifi</string>
+    <string name="pref_control_wifi_label" >Control Wifi</string>
+    <string name="pref_control_wifi_default" transatable="false">true</string>
+    <string name="pref_control_wifi_command" transatable="false"></string>
+
+    <string name="pref_control_3g_key" transatable="false">control_3g</string>
+    <string name="pref_control_3g_label" >Control 3G</string>
+    <string name="pref_control_3g_default" transatable="false">true</string>
+    <string name="pref_control_3g_command" transatable="false"></string>
+
 </resources>

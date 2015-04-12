@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <CheckBoxPreference
+        android:key="@string/pref_cam_key"
+        android:title="@string/pref_cam_label"
+        android:defaultValue="@string/pref_cam_default" />
+    <CheckBoxPreference
+        android:key="@string/pref_messages_key"
+        android:title="@string/pref_messages_label"
+        android:defaultValue="@string/pref_messages_default" />
+    <CheckBoxPreference
+        android:key="@string/pref_control_3g_key"
+        android:title="@string/pref_control_3g_label"
+        android:defaultValue="@string/pref_control_3g_default" />
+    <CheckBoxPreference
+        android:key="@string/pref_control_wifi_key"
+        android:title="@string/pref_control_wifi_label"
+        android:defaultValue="@string/pref_control_wifi_default" />
+    <CheckBoxPreference
+        android:key="@string/pref_set_alarm_key"
+        android:title="@string/pref_set_alarm_label"
+        android:defaultValue="@string/pref_set_alarm_default" />
+    <CheckBoxPreference
+        android:key="@string/pref_silent_phone_key"
+        android:title="@string/pref_silent_phone_label"
+        android:defaultValue="@string/pref_silent_phone_default" />
+
+</PreferenceScreen>

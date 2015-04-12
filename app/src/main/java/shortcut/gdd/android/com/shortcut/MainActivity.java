@@ -6,11 +6,13 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
 import android.support.v4.app.TaskStackBuilder;
@@ -22,6 +24,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,6 +60,7 @@ public class MainActivity extends ActionBarActivity {
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
+
     }
 
 
@@ -83,6 +87,12 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    public void test(View view){
+        Toast.makeText(getApplicationContext(),
+                view.getTag().toString(),
+                Toast.LENGTH_LONG).show();
+    }
+
     /**
      * A placeholder fragment containing a simple view.
      */
@@ -98,27 +108,68 @@ public class MainActivity extends ActionBarActivity {
                                  Bundle savedInstanceState) {
             rootView = inflater.inflate(R.layout.fragment_main, container, false);
 
-            String[] data = {
-                    "Read messages",
-                    "Silent phone",
-                    "Set Alarm",
-                    "Control Camera Light",
-                    "Control Wifi",
-                    "Control 3G"
-            };
-            List<String> weekForecast = new ArrayList<String>(Arrays.asList(data));
-
-            mShortcutAdapter =
-                    new ArrayAdapter<String>(
-                            getActivity(), // The current context (this activity)
-                            R.layout.list_item_shortcut, // The name of the layout ID.
-                            R.id.list_item_text, // The ID of the textview to populate.
-                            weekForecast);
+            // Construct the data source
+            ArrayList<Options> arrayOfOptions = populateOptions();
+            // Create the adapter to convert the array to views
+            OptionsAdapter adapter = new OptionsAdapter(getActivity(), arrayOfOptions);
+            // Attach the adapter to a ListView
             mListView = (ListView) rootView.findViewById(R.id.listview_shorcut);
+            mListView.setAdapter(adapter);
 
-            ListView listView = (ListView) rootView.findViewById(R.id.listview_shorcut);
-            listView.setAdapter(mShortcutAdapter);
             return rootView;
+        }
+
+        public ArrayList<Options> populateOptions(){
+            String[] data = {
+                    getString(R.string.pref_messages_label),
+                    getString(R.string.pref_cam_label),
+                    getString(R.string.pref_silent_phone_label),
+                    getString(R.string.pref_control_wifi_label),
+                    getString(R.string.pref_control_3g_label),
+                    getString(R.string.pref_set_alarm_label)
+            };
+            List<String> labels = new ArrayList<String>(Arrays.asList(data));
+
+            String[] data2 = {
+                    getString(R.string.pref_messages_command),
+                    getString(R.string.pref_cam_command),
+                    getString(R.string.pref_silent_phone_command),
+                    getString(R.string.pref_control_wifi_command),
+                    getString(R.string.pref_control_3g_command),
+                    getString(R.string.pref_set_alarm_command)
+            };
+            List<String> commands = new ArrayList<String>(Arrays.asList(data2));
+
+            List<String> prefs = loadPrefs();
+            ArrayList<Options> options = new ArrayList<Options>();
+            for (int i=0; i < labels.size();i++){
+                Options option = new Options(labels.get(i),
+                                             Boolean.parseBoolean(prefs.get(i)),
+                                             commands.get(i));
+                options.add(option);
+            }
+
+            return options;
+        }
+
+        public ArrayList<String> loadPrefs(){
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
+            String cam_light = prefs.getString(getString(R.string.pref_cam_key),
+                                        getString(R.string.pref_cam_default));
+            String messages = prefs.getString(getString(R.string.pref_messages_key),
+                    getString(R.string.pref_messages_default));
+            String control_3g = prefs.getString(getString(R.string.pref_control_3g_key),
+                    getString(R.string.pref_control_3g_default));
+            String wifi = prefs.getString(getString(R.string.pref_control_wifi_key),
+                    getString(R.string.pref_control_wifi_default));
+            String silent_phone = prefs.getString(getString(R.string.pref_silent_phone_key),
+                    getString(R.string.pref_silent_phone_default));
+
+            String alarm = prefs.getString(getString(R.string.pref_set_alarm_key),
+                    getString(R.string.pref_set_alarm_default));
+
+            String[] data = {messages,cam_light,silent_phone,wifi,control_3g,alarm};
+            return new ArrayList<String>(Arrays.asList(data));
         }
     }
 
@@ -162,13 +213,18 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.cancel(SHORTCUT_NOTIFICATION_ID);
+        removeNotification();
 
         bindService(new Intent(this, ShortcutService.class), mConnection,
                 Context.BIND_AUTO_CREATE);
 
+    }
+
+
+    private void removeNotification(){
+        NotificationManager mNotificationManager =
+                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.cancel(SHORTCUT_NOTIFICATION_ID);
     }
 
     @Override
@@ -176,13 +232,6 @@ public class MainActivity extends ActionBarActivity {
         super.onStop();
 
         startNotification();
-        /*
-        // Unbind from the service
-        if (mBound) {
-            unbindService(mConnection);
-            mBound = false;
-        }
-        */
     }
 
 

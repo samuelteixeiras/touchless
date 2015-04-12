@@ -25,12 +25,9 @@
             </intent-filter>
         </activity>
 
-        <receiver android:name=".MyReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED">
-                </action>
-            </intent-filter>
-        </receiver>
+        <activity android:name=".SettingsActivity"
+                  android:label="@string/menu_settings">
+        </activity>
 
         <service android:name=".ShortcutService" />
     </application>
