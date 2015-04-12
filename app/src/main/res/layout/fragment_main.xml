@@ -14,10 +14,11 @@
         <Button
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Start Touchless"
+            android:text="@string/btn_text_start"
+            android:onClick="startServerClickButton"
             android:gravity="center_vertical|center_horizontal"
             android:textAppearance="?android:textAppearanceLarge"
-
+            android:id="@+id/startButton"
             android:layout_gravity="center" />
 
     </FrameLayout>

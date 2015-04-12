@@ -6,6 +6,9 @@
     <string name="menu_settings">Settings</string>
     <string name="title_activity_voice_recognition">Voice Recognition</string>
 
+    <string name="btn_text_start">Start Touchless</string>
+    <string name="btn_text_stop">Stop Touchless</string>
+
 
     <string name="pref_cam_key" transatable="false">cam_light</string>
     <string name="pref_cam_label" >Control Camera Light</string>
@@ -25,16 +28,16 @@
     <string name="pref_set_alarm_key" transatable="false">set_alarm</string>
     <string name="pref_set_alarm_label" >Set Alarm</string>
     <string name="pref_set_alarm_default" transatable="false">true</string>
-    <string name="pref_set_alarm_command" transatable="false"></string>
+    <string name="pref_set_alarm_command" transatable="false">Set Alarm</string>
 
     <string name="pref_control_wifi_key" transatable="false">control_wifi</string>
     <string name="pref_control_wifi_label" >Control Wifi</string>
     <string name="pref_control_wifi_default" transatable="false">true</string>
-    <string name="pref_control_wifi_command" transatable="false"></string>
+    <string name="pref_control_wifi_command" transatable="false">Wifi Enable</string>
 
     <string name="pref_control_3g_key" transatable="false">control_3g</string>
     <string name="pref_control_3g_label" >Control 3G</string>
     <string name="pref_control_3g_default" transatable="false">true</string>
-    <string name="pref_control_3g_command" transatable="false"></string>
+    <string name="pref_control_3g_command" transatable="false">#g Enable</string>
 
 </resources>

@@ -17,10 +17,11 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Created by Samuel PC on 02/04/2015.
@@ -40,10 +41,12 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     static final int MSG_RECOGNIZER_START_LISTENING = 1;
     static final int MSG_RECOGNIZER_CANCEL = 2;
     static final int MSG_STOP_RECOGNIZER_CANCEL = 3;
-
+    static final int MSG_SPEAK = 4;
+    static final int MSG_RECOGNIZER_START_LISTENING_SOUND = 5;
     TextToSpeech tts;
 
     AudioManager mobilemode;
+    Boolean firstTime = true;
 
     Utility utility;
 
@@ -69,7 +72,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
 
 
-    protected static class IncomingHandler extends Handler
+    protected  class IncomingHandler extends Handler
     {
         private WeakReference<ShortcutService> mtarget;
 
@@ -124,6 +127,19 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                     target.mIsListening = false;
                     Log.d(TAG, "message stop recognizer");
                     break;
+
+                case MSG_SPEAK:
+                    speakOut(msg.arg1);
+                    break;
+
+                case MSG_RECOGNIZER_START_LISTENING_SOUND:
+                    if (!target.mIsListening)
+                    {
+                        target.mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
+                        target.mIsListening = true;
+                        Log.d(TAG, "message start listening sound"); //$NON-NLS-1$
+                    }
+                    break;
             }
         }
     }
@@ -136,7 +152,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         public void onTick(long millisUntilFinished)
         {
             // TODO Auto-generated method stub
-
+            Log.d(TAG, "onTick");
         }
 
         @Override
@@ -149,10 +165,11 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 mServerMessenger.send(message);
                 message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
                 mServerMessenger.send(message);
+                Log.d(TAG, "onFinish");
             }
             catch (RemoteException e)
             {
-
+                Log.d(TAG, "onFinish"+e);
             }
         }
     };
@@ -176,16 +193,17 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         {
             mSpeechRecognizer.destroy();
         }
+
+        Log.d(TAG, "onDestroy");
     }
 
     @Override
     public IBinder onBind(Intent intent) {
-        Toast.makeText(getApplicationContext(), "binding", Toast.LENGTH_LONG).show();
         return mServerMessenger.getBinder();
     }
 
-    private void speakOut() {
-        tts.speak("Test", TextToSpeech.QUEUE_FLUSH, null);
+    private void speakOut(int command) {
+        utility.textToSpeech(getCommand(command), mAudioManager, tts);
     }
 
     @Override
@@ -251,13 +269,13 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onEvent(int eventType, Bundle params)
         {
-
+            Log.d(TAG, "onEvent" );
         }
 
         @Override
         public void onPartialResults(Bundle partialResults)
         {
-
+            Log.d(TAG, "onPartialResults" );
         }
 
         @Override
@@ -277,46 +295,59 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         {
             ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             Log.d(TAG, "onResults"); //$NON-NLS-1$
-
             // get the audio and compare with waited strings
+
+            Boolean resulOk = false;
             search:  for(String item : list){
 
-                switch (item){
-                    case "ok google":
-                        startListening();
-                        break search;
-                    // break;
+                if(firstTime){
+                    switch (item) {
+                        case "ok google":
+                            firstTime = false;
+                            resulOk = true;
+                            break search;
+                    }
+                }else{
+                    switch (item) {
+                        case "weather":
+                            utility.textToSpeech("weather", mAudioManager, tts);
+                            break search;
 
-                    case "weather":
-                        utility.textToSpeech("weather",mAudioManager,tts);
-                        break;
+                        case "read messages":
+                            utility.readMessagens(mAudioManager, tts);
+                            break search;
 
-                    case "read messages":
-                        utility.readMessagens(mAudioManager,tts);
-                        break;
+                        case "lights on":
+                        case "light on":
+                            utility.turnOnFlashLight(getPackageManager());
+                            break search;
 
-                    case "lights on":
-                    case "light on":
-                        utility.turnOnFlashLight(getPackageManager());
-                        break;
+                        case "lights off":
+                        case "light off":
+                            utility.turnOffFlashLight(getPackageManager());
+                            break search;
 
-                    case "lights off":
-                    case "light off":
-                        utility.turnOffFlashLight(getPackageManager());
-                        break;
+                        case "silent mode":
+                            utility.ringerModeSilent(mobilemode, tts);
+                            break search;
 
-                    case "silent mode":
-                        utility.ringerModeSilent(mobilemode,tts);
-                        break;
+                        case "normal mode":
+                            utility.ringerModeNormal(mobilemode);
+                            break search;
+                    }
 
-                    case "normal mode":
-                        utility.ringerModeNormal(mobilemode);
-                        break;
-
-                    default:
-                        restartListening();
-                        break;
                 }
+            }
+            // always restart the listening
+            if(firstTime == false && resulOk == false){
+                restartListening();
+                firstTime = true;
+            }else{
+                if(firstTime == true && resulOk == false){
+                    restartListening();
+                }
+                else
+                Log.d(TAG, "dont restart");
             }
 
         }
@@ -334,16 +365,17 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
      */
     public void restartListening(){
 
-        mIsListening = false;
-        Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
-
+        mIsCountDownOn = false;
+        Message message = Message.obtain(null, MSG_RECOGNIZER_CANCEL);
         try
         {
+            mServerMessenger.send(message);
+            message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
             mServerMessenger.send(message);
         }
         catch (RemoteException e)
         {
-            Log.d(TAG, "error = " + e);
+            Log.d(TAG, "erro >" + e );
         }
 
     }
@@ -353,19 +385,36 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
      */
     public void startListening(){
 
-        mIsListening = false;
+        mIsCountDownOn = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-        Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
-
+        Message message = Message.obtain(null, MSG_RECOGNIZER_CANCEL);
         try
         {
+            mServerMessenger.send(message);
+            message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING_SOUND);
             mServerMessenger.send(message);
         }
         catch (RemoteException e)
         {
-            Log.d(TAG, "error = " + e);
+            Log.d(TAG, "erro >" + e );
         }
 
     }
+
+    public String getCommand(int command){
+        String[] data = {
+                getString(R.string.pref_messages_command),
+                getString(R.string.pref_cam_command),
+                getString(R.string.pref_silent_phone_command),
+                getString(R.string.pref_control_wifi_command),
+                getString(R.string.pref_control_3g_command),
+                getString(R.string.pref_set_alarm_command)
+        };
+        List<String> commads = new ArrayList<String>(Arrays.asList(data));
+
+        return commads.get(command);
+    }
+
+
 
 }

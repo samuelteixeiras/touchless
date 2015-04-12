@@ -23,8 +23,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.ListView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -48,7 +48,9 @@ public class MainActivity extends ActionBarActivity {
 
     static View rootView;
 
+    private boolean serverStatus = false;
 
+    private boolean startAfterBind = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,10 +89,30 @@ public class MainActivity extends ActionBarActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public void test(View view){
-        Toast.makeText(getApplicationContext(),
-                view.getTag().toString(),
-                Toast.LENGTH_LONG).show();
+    public void speakCommand(View view){
+
+        Message msg = Message.obtain(null, ShortcutService.MSG_SPEAK, Integer.parseInt(view.getTag().toString()), 0);
+        try {
+            mService.send(msg);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
+    }
+
+    public void startServerClickButton(View view) {
+        Button button = (Button) rootView.findViewById(R.id.startButton);
+
+        if(!serverStatus){
+            serverStatus = true;
+            startServer();
+            button.setText(getString(R.string.btn_text_stop));
+        }else{
+            serverStatus = false;
+            stopServer();
+            button.setText(getString(R.string.btn_text_start));
+        }
+
     }
 
     /**
@@ -131,12 +153,12 @@ public class MainActivity extends ActionBarActivity {
             List<String> labels = new ArrayList<String>(Arrays.asList(data));
 
             String[] data2 = {
-                    getString(R.string.pref_messages_command),
-                    getString(R.string.pref_cam_command),
-                    getString(R.string.pref_silent_phone_command),
-                    getString(R.string.pref_control_wifi_command),
-                    getString(R.string.pref_control_3g_command),
-                    getString(R.string.pref_set_alarm_command)
+                    "0",
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5"
             };
             List<String> commands = new ArrayList<String>(Arrays.asList(data2));
 
@@ -187,7 +209,7 @@ public class MainActivity extends ActionBarActivity {
             // representation of that from the raw IBinder object.
             mService = new Messenger(service);
             mBound = true;
-            startServer(rootView);
+            if(startAfterBind) startServer();
         }
 
         public void onServiceDisconnected(ComponentName className) {
@@ -198,14 +220,26 @@ public class MainActivity extends ActionBarActivity {
         }
     };
 
-    public static void startServer(View v) {
-        if (!mBound) return;
-        // Create and send a message to the service, using a supported 'what' value
-        Message msg = Message.obtain(null, ShortcutService.MSG_RECOGNIZER_START_LISTENING, 0, 0);
-        try {
-            mService.send(msg);
-        } catch (RemoteException e) {
-            e.printStackTrace();
+    public  void startServer() {
+        if (!mBound) {
+            bindService(new Intent(this, ShortcutService.class), mConnection,
+                    Context.BIND_AUTO_CREATE);
+            startAfterBind = true;
+        } else{
+            // Create and send a message to the service, using a supported 'what' value
+            Message msg = Message.obtain(null, ShortcutService.MSG_RECOGNIZER_START_LISTENING, 0, 0);
+            try {
+                mService.send(msg);
+            } catch (RemoteException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void stopServer() {
+        if (mBound) {
+            unbindService(mConnection);
+            mBound = false;
         }
     }
 
