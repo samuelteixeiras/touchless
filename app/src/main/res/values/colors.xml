@@ -6,8 +6,10 @@
     <color name="grey_700">#646464</color>
     <color name="black">#000000</color>
 
-    <color name="shortcut_base">#61B486</color>
-    <color name="shortcut_dark_base">#62AC88</color>
+    <color name="shortcut_base">#A5CF10</color>
+    <color name="shortcut_dark_base">#99CC45</color>
+    <color name="shortcut_btn">#c02942</color>
+    <color name="shortcut_text">#f76110</color>
 
     <color name="shortcut_pallete_1">#F16438</color>
 

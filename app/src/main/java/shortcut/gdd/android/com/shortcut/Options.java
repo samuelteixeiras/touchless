@@ -4,13 +4,15 @@ package shortcut.gdd.android.com.shortcut;
  * Created by Samuel PC on 12/04/2015.
  */
 public class Options {
-    public String title;
-    public Boolean defaultValue;
-    public String tag;
+    public String listItemText;
+    public Boolean checkBoxValue;
+    public String checkBoxText;
+    public String btnTag;
 
-    public Options(String title, Boolean defaultValue,String tag) {
-        this.title = title;
-        this.defaultValue = defaultValue;
-        this.tag = tag;
+    public Options(String listItemText, Boolean defaultValue,String tag,String checkBoxText) {
+        this.listItemText = listItemText;
+        this.checkBoxText = checkBoxText;
+        this.checkBoxValue = defaultValue;
+        this.btnTag = tag;
     }
 }

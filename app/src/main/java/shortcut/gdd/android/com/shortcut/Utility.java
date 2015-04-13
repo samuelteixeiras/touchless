@@ -1,13 +1,18 @@
 package shortcut.gdd.android.com.shortcut;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.hardware.Camera;
 import android.media.AudioManager;
+import android.net.ConnectivityManager;
 import android.net.Uri;
+import android.net.wifi.WifiManager;
 import android.speech.tts.TextToSpeech;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
 
@@ -17,7 +22,6 @@ import java.util.Locale;
 public class Utility extends Activity {
 
     final String RINGER_MODE_SILENT = " ringer mode silent";
-    Camera cam = null;
 
     public void ringerModeSilent(AudioManager mobilemode,TextToSpeech tts){
         textToSpeech(RINGER_MODE_SILENT,mobilemode,tts);
@@ -26,6 +30,30 @@ public class Utility extends Activity {
 
     public void ringerModeNormal(AudioManager mobilemode) {
         mobilemode.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
+    }
+
+    public void wifiChange(boolean status,Context context){
+        WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
+        wifiManager.setWifiEnabled(status);
+    }
+
+    public void connectionChange(Boolean status){
+        ConnectivityManager dataManager;
+        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        Method dataMtd = null;
+        try {
+            dataMtd = ConnectivityManager.class.getDeclaredMethod("setMobileDataEnabled", boolean.class);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        dataMtd.setAccessible(true);
+        try {
+            dataMtd.invoke(dataManager, status);        //True - to enable data connectivity .
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 
     public void textToSpeech(String speakThis,AudioManager mAudioManager,TextToSpeech tts){
@@ -58,10 +86,10 @@ public class Utility extends Activity {
     }
 
 
-    public void turnOnFlashLight(PackageManager pm) {
+    public void turnOnFlashLight(PackageManager pm,Camera cam) {
         try {
             if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
-                cam = Camera.open();
+
                 Camera.Parameters p = cam.getParameters();
                 p.setFlashMode(Camera.Parameters.FLASH_MODE_TORCH);
                 cam.setParameters(p);
@@ -72,12 +100,11 @@ public class Utility extends Activity {
         }
     }
 
-    public void turnOffFlashLight(PackageManager pm) {
+    public void turnOffFlashLight(PackageManager pm,Camera cam) {
         try {
             if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
                 cam.stopPreview();
                 cam.release();
-                cam = null;
             }
         } catch (Exception e) {
             e.printStackTrace();

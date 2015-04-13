@@ -6,17 +6,19 @@
     android:layout_height="wrap_content"
     android:gravity="center_vertical"
     android:minHeight="?android:attr/listPreferredItemHeight"
-    android:orientation="horizontal">
+    android:orientation="horizontal"
+    android:background="#ffffffff">
 
     <FrameLayout
-        android:layout_width="70dp"
+        android:layout_width="50dp"
         android:layout_height="wrap_content">
 
         <ImageButton
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:id="@+id/list_item_imagebutton"
             android:onClick="speakCommand"
+            android:background="@drawable/buttonshapespeak"
             android:src="@android:drawable/ic_lock_silent_mode_off" />
 
     </FrameLayout>
@@ -24,8 +26,9 @@
     <LinearLayout
         android:layout_height="wrap_content"
         android:layout_width="0dp"
-        android:layout_weight="8"
-        android:orientation="vertical">
+        android:layout_weight="7"
+        android:orientation="vertical"
+        android:layout_marginLeft="10dp">
 
     <TextView
         android:id="@+id/list_item_text"
@@ -40,12 +43,13 @@
     <LinearLayout
         android:layout_height="wrap_content"
         android:layout_width="0dp"
-        android:layout_weight="4"
+        android:layout_weight="1"
         android:orientation="vertical">
 
         <CheckBox
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:onClick="savePreference"
             android:id="@+id/list_item_checkbox" />
     </LinearLayout>
 

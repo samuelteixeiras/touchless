@@ -3,6 +3,7 @@ package shortcut.gdd.android.com.shortcut;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.hardware.Camera;
 import android.media.AudioManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -17,10 +18,12 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -44,11 +47,19 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     static final int MSG_SPEAK = 4;
     static final int MSG_RECOGNIZER_START_LISTENING_SOUND = 5;
     TextToSpeech tts;
+    Camera cam = null;
+
 
     AudioManager mobilemode;
     Boolean firstTime = true;
 
+    Boolean controlService = false;
     Utility utility;
+
+    Boolean lightStatus = false;
+
+    static CountDownTimer mTimer;
+    static CountDownTimer mTimerSound;
 
     @Override
     public void onCreate()
@@ -106,6 +117,36 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         target.mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
                         target.mIsListening = true;
                         Log.d(TAG, "message start listening"); //$NON-NLS-1$
+
+                        final long lStartTime = new Date().getTime();
+
+                        // android bug?
+                        if(mTimer == null) {
+                            mTimer = new CountDownTimer(15000, 5000) {
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+                                    //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
+                                }
+                                @Override
+                                public void onFinish() {
+                                    long lEndTime = new Date().getTime();
+
+                                    long difference = lEndTime - lStartTime;
+
+                                    System.out.println("Elapsed milliseconds: " + difference);
+                                    Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
+                                    mSpeechRecognizer.cancel();
+                                    mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
+                                    mTimer.cancel();
+
+                                }
+                            };
+                        }
+                        mTimer.start();
+
+
+                    }else{
+                        Log.d(TAG, "message not start listening"); //$NON-NLS-1$
                     }
                     break;
 
@@ -138,6 +179,35 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         target.mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
                         target.mIsListening = true;
                         Log.d(TAG, "message start listening sound"); //$NON-NLS-1$
+
+                        final long lStartTime = new Date().getTime();
+
+                        // android bug?
+                        if(mTimer == null) {
+                            mTimer = new CountDownTimer(15000, 5000) {
+                                @Override
+                                public void onTick(long millisUntilFinished) {
+                                    //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
+                                }
+                                @Override
+                                public void onFinish() {
+                                    long lEndTime = new Date().getTime();
+
+                                    long difference = lEndTime - lStartTime;
+
+                                    System.out.println("Elapsed milliseconds: " + difference);
+                                    Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
+                                    mSpeechRecognizer.cancel();
+                                    mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
+                                    mTimer.cancel();
+
+                                }
+                            };
+                        }
+                        mTimer.start();
+
+                    }else{
+                        Log.d(TAG, "message not started"); //$NON-NLS-1$
                     }
                     break;
             }
@@ -165,12 +235,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 mServerMessenger.send(message);
                 message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
                 mServerMessenger.send(message);
-                Log.d(TAG, "onFinish");
+                Log.d(TAG, ">>>>>>>>>>>  onFinish <<<<<<<<<<<<<<<<<<<<");
             }
             catch (RemoteException e)
             {
                 Log.d(TAG, "onFinish"+e);
             }
+           //controlService = false;
+           //Log.d(TAG, "controlService :" + controlService);
         }
     };
 
@@ -178,6 +250,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     public void onDestroy()
     {
         super.onDestroy();
+
+        mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+
+        if(cam != null){
+            cam.release();
+            cam = null;
+        }
 
         if(tts!=null) {
             tts.stop();
@@ -230,13 +310,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 mIsCountDownOn = false;
                 mNoSpeechCountDown.cancel();
             }
+            
             Log.d(TAG, "onBeginingOfSpeech"); //$NON-NLS-1$
         }
 
         @Override
         public void onBufferReceived(byte[] buffer)
         {
-
+            Log.d(TAG, "onBufferReceived");
         }
 
         @Override
@@ -261,7 +342,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             }
             catch (RemoteException e)
             {
-
+                Log.d(TAG, "error = " + e);
             }
             Log.d(TAG, "error = " + error); //$NON-NLS-1$
         }
@@ -281,13 +362,21 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onReadyForSpeech(Bundle params)
         {
+
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
             {
                 mIsCountDownOn = true;
                 mNoSpeechCountDown.start();
 
+            }else{
+                Log.d(TAG, "onReadyForSpeech ??"); //$NON-NLS-1$
             }
+            Toast.makeText(getApplicationContext(),"onReadyForSpeech", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "onReadyForSpeech"); //$NON-NLS-1$
+            //controlService = true;
+            //Log.d(TAG, "controlService : " + controlService);
+
         }
 
         @Override
@@ -297,57 +386,88 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             Log.d(TAG, "onResults"); //$NON-NLS-1$
             // get the audio and compare with waited strings
 
-            Boolean resulOk = false;
             search:  for(String item : list){
 
                 if(firstTime){
                     switch (item) {
                         case "ok google":
                             firstTime = false;
-                            resulOk = true;
                             break search;
                     }
                 }else{
                     switch (item) {
                         case "weather":
                             utility.textToSpeech("weather", mAudioManager, tts);
+                            firstTime = true;
                             break search;
 
                         case "read messages":
                             utility.readMessagens(mAudioManager, tts);
+                            firstTime = true;
                             break search;
 
                         case "lights on":
                         case "light on":
-                            utility.turnOnFlashLight(getPackageManager());
+                            if(!lightStatus){
+                                cam = Camera.open();
+                                utility.turnOnFlashLight(getPackageManager(),cam);
+                                firstTime = true;
+                                lightStatus = true;
+                            }
                             break search;
-
                         case "lights off":
                         case "light off":
-                            utility.turnOffFlashLight(getPackageManager());
+                            if(lightStatus) {
+                                utility.turnOffFlashLight(getPackageManager(), cam);
+                                firstTime = true;
+                                lightStatus = false;
+                            }
                             break search;
 
                         case "silent mode":
                             utility.ringerModeSilent(mobilemode, tts);
+                            firstTime = true;
                             break search;
 
                         case "normal mode":
                             utility.ringerModeNormal(mobilemode);
+                            firstTime = true;
                             break search;
+                        case "wifi on":
+                            firstTime = true;
+                            utility.wifiChange(true,getApplicationContext());
+                            break;
+                        case "wifi off":
+                            firstTime = true;
+                            utility.wifiChange(false,getApplicationContext());
+                            break;
+                        case "connection on":
+                            firstTime = true;
+                            utility.connectionChange(true);
+                            break;
+                        case "connection off":
+                            firstTime = true;
+                            utility.connectionChange(false);
+                            break;
+
+                        default:
+                            // command not recognized, restart
+                            firstTime = true;
+                            break;
                     }
 
                 }
             }
-            // always restart the listening
-            if(firstTime == false && resulOk == false){
+
+
+            if(firstTime){
                 restartListening();
-                firstTime = true;
-            }else{
-                if(firstTime == true && resulOk == false){
-                    restartListening();
-                }
-                else
-                Log.d(TAG, "dont restart");
+                Log.d(TAG, "restartListening  >" +firstTime );
+            }else {
+                // ok google recognized
+                startListening();
+                Log.d(TAG, "startListening >" +firstTime );
+
             }
 
         }
@@ -365,7 +485,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
      */
     public void restartListening(){
 
-        mIsCountDownOn = false;
+        mNoSpeechCountDown.cancel();
         Message message = Message.obtain(null, MSG_RECOGNIZER_CANCEL);
         try
         {
@@ -377,15 +497,13 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         {
             Log.d(TAG, "erro >" + e );
         }
-
     }
 
     /**
      * Restart the recognizer
      */
     public void startListening(){
-
-        mIsCountDownOn = false;
+        // for call again
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
         Message message = Message.obtain(null, MSG_RECOGNIZER_CANCEL);
         try

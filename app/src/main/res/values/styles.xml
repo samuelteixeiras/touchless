@@ -16,7 +16,7 @@
     <!-- main activity action bar styles -->
     <style name="ActionBar.Solid.ShortCut.NoTitle" parent="@style/Widget.AppCompat.Light.ActionBar.Solid.Inverse">
         <item name="displayOptions">useLogo|showHome</item>
-        <item name="logo">@drawable/ic_mic_128</item>
+        <item name="logo">@drawable/ic_logo</item>
     </style>
 
 

@@ -17,9 +17,9 @@ import java.util.ArrayList;
 public class OptionsAdapter extends ArrayAdapter<Options> {
 
     private static class ViewHolder {
-        TextView title;
-        CheckBox defaultValue;
-        ImageButton tag;
+        TextView listItemText;
+        CheckBox checkBoxValue;
+        ImageButton btnTag;
     }
 
     public OptionsAdapter(Context context, ArrayList<Options> options) {
@@ -36,17 +36,18 @@ public class OptionsAdapter extends ArrayAdapter<Options> {
             viewHolder = new ViewHolder();
             LayoutInflater inflater = LayoutInflater.from(getContext());
             convertView = inflater.inflate(R.layout.list_item_shortcut, parent, false);
-            viewHolder.title = (TextView) convertView.findViewById(R.id.list_item_text);
-            viewHolder.defaultValue = (CheckBox) convertView.findViewById(R.id.list_item_checkbox);
-            viewHolder.tag = (ImageButton) convertView.findViewById(R.id.list_item_imagebutton);
+            viewHolder.listItemText = (TextView) convertView.findViewById(R.id.list_item_text);
+            viewHolder.checkBoxValue = (CheckBox) convertView.findViewById(R.id.list_item_checkbox);
+            viewHolder.btnTag = (ImageButton) convertView.findViewById(R.id.list_item_imagebutton);
             convertView.setTag(viewHolder);
         } else {
             viewHolder = (ViewHolder) convertView.getTag();
         }
         // Populate the data into the template view using the data object
-        viewHolder.title.setText(option.title);
-        viewHolder.defaultValue.setChecked(option.defaultValue);
-        viewHolder.tag.setTag(option.tag);
+        viewHolder.listItemText.setText(option.listItemText);
+        viewHolder.checkBoxValue.setChecked(option.checkBoxValue);
+        viewHolder.checkBoxValue.setTag(option.checkBoxText);
+        viewHolder.btnTag.setTag(option.btnTag);
         // Return the completed view to render on screen
         return convertView;
     }

@@ -12,10 +12,8 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
-import android.preference.PreferenceManager;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.app.TaskStackBuilder;
 import android.support.v7.app.ActionBarActivity;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -24,6 +22,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
+import android.widget.CheckBox;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -38,8 +37,6 @@ public class MainActivity extends ActionBarActivity {
     private static final int SHORTCUT_NOTIFICATION_ID = 3000;
     private static ListView mListView;
 
-    private ShortcutService myService;
-
     /** Messenger for communicating with the service. */
     static Messenger mService = null;
 
@@ -52,6 +49,10 @@ public class MainActivity extends ActionBarActivity {
 
     private boolean startAfterBind = false;
 
+    public static final String PREFS_NAME = "MyPrefsFile";
+
+    public static ArrayList<Boolean> listPrefs;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,8 +64,24 @@ public class MainActivity extends ActionBarActivity {
                     .commit();
         }
 
+        loadPrefs();
+
     }
 
+
+    public void loadPrefs(){
+
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+
+        listPrefs = new ArrayList<Boolean>();
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_messages_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_silent_phone_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_3g_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_set_alarm_key), true));
+
+    }
 
 
     @Override
@@ -100,6 +117,18 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    public void savePreference(View view){
+
+        boolean checked = ((CheckBox) view).isChecked();
+        String index = view.getTag().toString();
+
+        SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
+        SharedPreferences.Editor editor = settings.edit();
+        editor.putBoolean(index, checked);
+        // Commit the edits!
+        editor.commit();
+    }
+
     public void startServerClickButton(View view) {
         Button button = (Button) rootView.findViewById(R.id.startButton);
 
@@ -113,6 +142,20 @@ public class MainActivity extends ActionBarActivity {
             button.setText(getString(R.string.btn_text_start));
         }
 
+    }
+
+    private void restoreButtonState(){
+        Button button = (Button) rootView.findViewById(R.id.startButton);
+
+        if(!serverStatus){
+            serverStatus = true;
+            startServer();
+            button.setText(getString(R.string.btn_text_stop));
+        }else{
+            serverStatus = false;
+            stopServer();
+            button.setText(getString(R.string.btn_text_start));
+        }
     }
 
     /**
@@ -152,7 +195,16 @@ public class MainActivity extends ActionBarActivity {
             };
             List<String> labels = new ArrayList<String>(Arrays.asList(data));
 
-            String[] data2 = {
+            String[] keys = {
+                    getString(R.string.pref_messages_key),
+                    getString(R.string.pref_cam_key),
+                    getString(R.string.pref_silent_phone_key),
+                    getString(R.string.pref_control_wifi_key),
+                    getString(R.string.pref_control_3g_key),
+                    getString(R.string.pref_set_alarm_key)
+            };
+
+            String[] index = {
                     "0",
                     "1",
                     "2",
@@ -160,39 +212,22 @@ public class MainActivity extends ActionBarActivity {
                     "4",
                     "5"
             };
-            List<String> commands = new ArrayList<String>(Arrays.asList(data2));
+            List<String> listIndex = new ArrayList<String>(Arrays.asList(index));
+            List<String> listKeys = new ArrayList<String>(Arrays.asList(keys));
 
-            List<String> prefs = loadPrefs();
             ArrayList<Options> options = new ArrayList<Options>();
             for (int i=0; i < labels.size();i++){
                 Options option = new Options(labels.get(i),
-                                             Boolean.parseBoolean(prefs.get(i)),
-                                             commands.get(i));
+                                             listPrefs.get(i),
+                                             listIndex.get(i),
+                                             listKeys.get(i));
                 options.add(option);
             }
 
             return options;
         }
 
-        public ArrayList<String> loadPrefs(){
-            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getActivity());
-            String cam_light = prefs.getString(getString(R.string.pref_cam_key),
-                                        getString(R.string.pref_cam_default));
-            String messages = prefs.getString(getString(R.string.pref_messages_key),
-                    getString(R.string.pref_messages_default));
-            String control_3g = prefs.getString(getString(R.string.pref_control_3g_key),
-                    getString(R.string.pref_control_3g_default));
-            String wifi = prefs.getString(getString(R.string.pref_control_wifi_key),
-                    getString(R.string.pref_control_wifi_default));
-            String silent_phone = prefs.getString(getString(R.string.pref_silent_phone_key),
-                    getString(R.string.pref_silent_phone_default));
 
-            String alarm = prefs.getString(getString(R.string.pref_set_alarm_key),
-                    getString(R.string.pref_set_alarm_default));
-
-            String[] data = {messages,cam_light,silent_phone,wifi,control_3g,alarm};
-            return new ArrayList<String>(Arrays.asList(data));
-        }
     }
 
 
@@ -255,6 +290,29 @@ public class MainActivity extends ActionBarActivity {
     }
 
 
+    @Override
+    public void onSaveInstanceState(Bundle savedInstanceState) {
+        super.onSaveInstanceState(savedInstanceState);
+        // Save UI state changes to the savedInstanceState.
+        // This bundle will be passed to onCreate if the process is
+        // killed and restarted.
+        savedInstanceState.putBoolean("serverStatus", serverStatus);
+        savedInstanceState.putBoolean("mBound", mBound);
+        savedInstanceState.putBoolean("startAfterBind", startAfterBind);
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        // Restore UI state from the savedInstanceState.
+        // This bundle has also been passed to onCreate.
+        serverStatus = savedInstanceState.getBoolean("serverStatus");
+        mBound = savedInstanceState.getBoolean("mBound");
+        startAfterBind = savedInstanceState.getBoolean("startAfterBind");
+        restoreButtonState();
+
+    }
+
     private void removeNotification(){
         NotificationManager mNotificationManager =
                 (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
@@ -271,34 +329,21 @@ public class MainActivity extends ActionBarActivity {
 
     public void startNotification(){
 
-        NotificationCompat.Builder mBuilder =
-                new NotificationCompat.Builder(this)
-                        .setSmallIcon(R.drawable.ic_mic_48)
-                        .setContentTitle("Touchless")
-                        .setContentText("Show Options")
-                        .setOngoing(true);
-        // Creates an explicit intent for an Activity in your app
-        Intent resultIntent = new Intent(this, MainActivity.class);
+        Intent notificationIntent = new Intent(this, MainActivity.class);
+        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent intent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
 
-        // The stack builder object will contain an artificial back stack for the
-        // started Activity.
-        // This ensures that navigating backward from the Activity leads out of
-        // your application to the Home screen.
-        TaskStackBuilder stackBuilder = TaskStackBuilder.create(this);
-        // Adds the back stack for the Intent (but not the Intent itself)
-        stackBuilder.addParentStack(MainActivity.class);
-        // Adds the Intent that starts the Activity to the top of the stack
-        stackBuilder.addNextIntent(resultIntent);
-        PendingIntent resultPendingIntent =
-                stackBuilder.getPendingIntent(
-                        0,
-                        PendingIntent.FLAG_UPDATE_CURRENT
-                );
-        mBuilder.setContentIntent(resultPendingIntent);
-        NotificationManager mNotificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        // SHORTCUT_ID allows you to update the notification later on.
-        mNotificationManager.notify(SHORTCUT_NOTIFICATION_ID, mBuilder.build());
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
+                .setSmallIcon(R.drawable.ic_mic_48)
+                .setContentTitle("Touchless")
+                .setContentIntent(intent)
+                .setContentText("Show Options")
+                .setAutoCancel(true)
+                .setOngoing(true);
+                //.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE | Notification.DEFAULT_LIGHTS);
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager.notify(0, mBuilder.build());
+
     }
 
 }
