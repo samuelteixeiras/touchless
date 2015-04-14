@@ -13,6 +13,7 @@ import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
 import android.os.RemoteException;
+import android.provider.AlarmClock;
 import android.speech.RecognitionListener;
 import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
@@ -60,6 +61,8 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
     static CountDownTimer mTimer;
     static CountDownTimer mTimerSound;
+
+    final static String MESSAGE_ALARM = "touchless alarm";
 
     @Override
     public void onCreate()
@@ -121,8 +124,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         final long lStartTime = new Date().getTime();
 
                         // android bug?
+
                         if(mTimer == null) {
-                            mTimer = new CountDownTimer(15000, 5000) {
+                            mTimer = new CountDownTimer(10000, 5000) {
                                 @Override
                                 public void onTick(long millisUntilFinished) {
                                     //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
@@ -143,6 +147,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                             };
                         }
                         mTimer.start();
+
 
 
                     }else{
@@ -184,7 +189,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
                         // android bug?
                         if(mTimer == null) {
-                            mTimer = new CountDownTimer(15000, 5000) {
+                            mTimer = new CountDownTimer(10000, 5000) {
                                 @Override
                                 public void onTick(long millisUntilFinished) {
                                     //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
@@ -241,8 +246,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             {
                 Log.d(TAG, "onFinish"+e);
             }
-           //controlService = false;
-           //Log.d(TAG, "controlService :" + controlService);
+
         }
     };
 
@@ -304,13 +308,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onBeginningOfSpeech()
         {
-            // speech input will be processed, so there is no need for count down anymore
+            // speech input will be processed,
+            // so there is no need for count down anymore
             if (mIsCountDownOn)
             {
                 mIsCountDownOn = false;
                 mNoSpeechCountDown.cancel();
             }
-            
+
             Log.d(TAG, "onBeginingOfSpeech"); //$NON-NLS-1$
         }
 
@@ -374,8 +379,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             }
             Toast.makeText(getApplicationContext(),"onReadyForSpeech", Toast.LENGTH_SHORT).show();
             Log.d(TAG, "onReadyForSpeech"); //$NON-NLS-1$
-            //controlService = true;
-            //Log.d(TAG, "controlService : " + controlService);
+
 
         }
 
@@ -385,8 +389,17 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             Log.d(TAG, "onResults"); //$NON-NLS-1$
             // get the audio and compare with waited strings
-
+            String aux = "";
             search:  for(String item : list){
+
+                // modify item case set alarm found
+                if(item.contains("set an alarm for")){
+                    aux = item;
+                    item   = "set an alarm for";
+                } else if(item.contains("set timer for")){
+                    aux = item;
+                    item   = "set timer for";
+                }
 
                 if(firstTime){
                     switch (item) {
@@ -396,6 +409,17 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                     }
                 }else{
                     switch (item) {
+
+                        case "take a picture":
+                            utility.capturePhoto();
+                            break search;
+
+                        case "set an alarm for":
+                            createAlarm(aux,item);
+                            break search;
+                        case "set timer for":
+                            startTimer(aux, item);
+                            break search;
                         case "weather":
                             utility.textToSpeech("weather", mAudioManager, tts);
                             firstTime = true;
@@ -464,7 +488,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 restartListening();
                 Log.d(TAG, "restartListening  >" +firstTime );
             }else {
-                // ok google recognized
+
                 startListening();
                 Log.d(TAG, "startListening >" +firstTime );
 
@@ -533,6 +557,82 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         return commads.get(command);
     }
 
+    public void createAlarm(String aux,String item){
+        int hourAlarm = 0;
+        int minutesAlarm = 0;
+
+        if(aux.isEmpty())
+            return;
+
+        aux = aux.replace(item,"");
+
+        if(aux.contains("a.m.")){
+            aux = aux.replace("a.m.","");
+            aux = aux.replace(" ","");
+            if(aux.isEmpty())
+                return;
+
+            if(aux.contains(":")){
+                String[] splits =  aux.split(":");
+                hourAlarm = Integer.parseInt(splits[0]);
+                minutesAlarm = Integer.parseInt(splits[1]);
+            }else {
+                hourAlarm = Integer.parseInt(aux);
+            }
+        }else if(aux.contains("p.m.")){
+            aux = aux.replace("p.m.","");
+            aux = aux.replace(" ","");
+
+            if(aux.isEmpty())
+                return;
+
+            if(aux.contains(":")){
+                String[] splits =  aux.split(":");
+                hourAlarm = Integer.parseInt(splits[0]);
+                minutesAlarm = Integer.parseInt(splits[1]);
+            }else {
+                hourAlarm = Integer.parseInt(aux);
+            }
+            hourAlarm+=12;
+        }
+        Intent intent = new Intent(AlarmClock.ACTION_SET_ALARM)
+                .putExtra(AlarmClock.EXTRA_MESSAGE, MESSAGE_ALARM)
+                .putExtra(AlarmClock.EXTRA_HOUR, hourAlarm)
+                .putExtra(AlarmClock.EXTRA_MINUTES, minutesAlarm);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
+
+
+    public void startTimer(String aux,String item) {
+        int seconds = 0;
+        int minutes = 0;
+        if(aux.isEmpty())
+            return;
+
+        aux = aux.replace(item,"");
+
+        if(aux.contains("minutes")){
+            aux = aux.replace("minutes","");
+            aux = aux.replace(" ","");
+            if(aux.isEmpty())
+                return;
+            minutes = Integer.parseInt(aux);
+            // change for seconds
+            seconds = minutes * 60;
+        }
+
+        Intent intent = new Intent(AlarmClock.ACTION_SET_TIMER)
+                .putExtra(AlarmClock.EXTRA_MESSAGE, MESSAGE_ALARM)
+                .putExtra(AlarmClock.EXTRA_LENGTH, seconds)
+                .putExtra(AlarmClock.EXTRA_SKIP_UI, true);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivity(intent);
+        }
+    }
 
 
 }

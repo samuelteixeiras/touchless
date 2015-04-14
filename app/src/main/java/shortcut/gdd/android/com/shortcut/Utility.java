@@ -2,6 +2,7 @@ package shortcut.gdd.android.com.shortcut;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.hardware.Camera;
@@ -9,6 +10,7 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
+import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 
 import java.lang.reflect.InvocationTargetException;
@@ -111,6 +113,15 @@ public class Utility extends Activity {
         }
     }
 
+
+
+    public void capturePhoto() {
+        Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(intent,123);
+        }
+    }
 
 
 }
