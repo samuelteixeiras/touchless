@@ -3,6 +3,7 @@ package shortcut.gdd.android.com.shortcut;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.hardware.Camera;
 import android.media.AudioManager;
 import android.media.SoundPool;
@@ -20,7 +21,6 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
-import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -30,6 +30,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
+ * ShortcutService: executed in background
  * Created by Samuel PC on 02/04/2015.
  */
 public class ShortcutService extends Service implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener
@@ -141,15 +142,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                                 @Override
                                 public void onFinish() {
                                     firstTime = true;
-                                    playFailSound();
-
+                                    playFailSound("mtimer 1");
+                                    mTimer.cancel();
                                     Handler handler = new Handler();
                                     handler.postDelayed(new Runnable() {
                                         public void run() {
                                             Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
                                             mSpeechRecognizer.cancel();
                                             mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
-                                            mTimer.cancel();
                                         }
                                     }, 1000);
                                 }
@@ -204,7 +204,8 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                                 @Override
                                 public void onFinish() {
                                     firstTime = true;
-                                    playFailSound();
+                                    playFailSound("mTimer 2");
+                                    mTimer.cancel();
 
                                     Handler handler = new Handler();
                                     handler.postDelayed(new Runnable() {
@@ -212,7 +213,6 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                                             Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
                                             mSpeechRecognizer.cancel();
                                             mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
-                                            mTimer.cancel();
                                         }
                                     }, 1000);
                                 }
@@ -235,7 +235,6 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onTick(long millisUntilFinished)
         {
-            // TODO Auto-generated method stub
             Log.d(TAG, "onTick");
         }
 
@@ -343,32 +342,25 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onError(int error)
         {
-            playFailSound();
 
-            Handler handler = new Handler();
-            handler.postDelayed(new Runnable() {
-                public void run() {
+            playFailSound("onerror");
 
-                    if (mIsCountDownOn)
-                    {
-                        mIsCountDownOn = false;
-                        mNoSpeechCountDown.cancel();
-                    }
-                    mIsListening = false;
-                    Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
-                    try
-                    {
-                        firstTime = true;
-                        mServerMessenger.send(message);
-                    }
-                    catch (RemoteException e)
-                    {
-                        Log.d(TAG, "error = " + e);
-                    }
-                }
-            }, 1000);
-
-
+            if (mIsCountDownOn)
+            {
+                mIsCountDownOn = false;
+                mNoSpeechCountDown.cancel();
+            }
+            mIsListening = false;
+            Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
+            try
+            {
+                firstTime = true;
+                mServerMessenger.send(message);
+            }
+            catch (RemoteException e)
+            {
+                Log.d(TAG, "error = " + e);
+            }
         }
 
         @Override
@@ -386,7 +378,6 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         @Override
         public void onReadyForSpeech(Bundle params)
         {
-            Toast.makeText(getApplicationContext(),"onReadyForSpeech", Toast.LENGTH_SHORT).show();
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
             {
                 mIsCountDownOn = true;
@@ -396,8 +387,6 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 Log.d(TAG, "onReadyForSpeech ??"); 
             }
             Log.d(TAG, "onReadyForSpeech"); 
-
-
         }
 
         @Override
@@ -426,141 +415,143 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                             resultOk = true;
                             break search;
                     }
-                }else{
-                    switch (item) {
+                }else switch (item) {
 
-                        case "what time is it":
-                            resultOk = true;
-                            SimpleDateFormat sdfHour = new SimpleDateFormat("HH");
-                            SimpleDateFormat sdfMinutes = new SimpleDateFormat("mm");
-                            long time =  new Date().getTime();
-                            String strHour = sdfHour.format(time);
-                            String strMinutes = sdfMinutes.format(time);
-                            String speakTime = "Time now: "+strHour + " hours and " + strMinutes + " minutes ";
+                    case "what time is it":
+                        resultOk = true;
+                        SimpleDateFormat sdfHour = new SimpleDateFormat("HH");
+                        SimpleDateFormat sdfMinutes = new SimpleDateFormat("mm");
+                        long time = new Date().getTime();
+                        String strHour = sdfHour.format(time);
+                        String strMinutes = sdfMinutes.format(time);
+                        String speakTime = "Time now: " + strHour + " hours and " + strMinutes + " minutes ";
 
-                            utility.textToSpeech(speakTime, mAudioManager, tts);
-                            firstTime = true;
-                            break search;
-                        case "what day is it":
-                            resultOk = true;
-                            SimpleDateFormat day = new SimpleDateFormat("dd");
-                            SimpleDateFormat month = new SimpleDateFormat("MMMM");
-                            SimpleDateFormat year = new SimpleDateFormat("yyyy");
-                            String strDay = day.format(new Date().getTime());
-                            String strMonth = month.format(new Date().getTime());
-                            String strYear = year.format(new Date().getTime());
-                            String speakDate = "Today is:"+ strDay +" "+ strMonth +" "+ strYear;
+                        utility.textToSpeech(speakTime, mAudioManager, tts);
+                        firstTime = true;
+                        break search;
+                    case "what day is it":
+                        resultOk = true;
+                        SimpleDateFormat day = new SimpleDateFormat("dd");
+                        SimpleDateFormat month = new SimpleDateFormat("MMMM");
+                        SimpleDateFormat year = new SimpleDateFormat("yyyy");
+                        String strDay = day.format(new Date().getTime());
+                        String strMonth = month.format(new Date().getTime());
+                        String strYear = year.format(new Date().getTime());
+                        String speakDate = "Today is:" + strDay + " " + strMonth + " " + strYear;
 
-                            utility.textToSpeech(speakDate, mAudioManager, tts);
-                            firstTime = true;
-                            break search;
+                        utility.textToSpeech(speakDate, mAudioManager, tts);
+                        firstTime = true;
+                        break search;
+
+                        /*
+                        testing
                         case "take a picture":
                             resultOk = true;
                             utility.capturePhoto();
                             firstTime = true;
-                            break search;
+                            break search;*/
 
-                        case "set an alarm for":
-                            resultOk = true;
-                            createAlarm(aux,item);
-                            firstTime = true;
-                            break search;
-                        case "set timer for":
-                            resultOk = true;
-                            startTimer(aux, item);
-                            firstTime = true;
-                            break search;
-                        case "weather":
-                            resultOk = true;
-                            utility.textToSpeech("weather", mAudioManager, tts);
-                            firstTime = true;
-                            break search;
+                    case "set an alarm for":
+                        resultOk = true;
+                        createAlarm(aux, item);
+                        firstTime = true;
+                        break search;
+                    /* only in api lv 19 , current 16
+                    case "set timer for":
+                        resultOk = true;
+                        startTimer(aux, item);
+                        firstTime = true;
+                        break search;
+                    */
+                    case "weather":
+                        resultOk = true;
+                        utility.textToSpeech("weather", mAudioManager, tts);
+                        firstTime = true;
+                        break search;
 
-                        case "read messages":
-                            resultOk = true;
-                            utility.readMessagens(mAudioManager, tts);
-                            firstTime = true;
-                            break search;
+                    case "read messages":
+                        resultOk = true;
+                        utility.readMessagens(mAudioManager, tts);
+                        firstTime = true;
+                        break search;
 
-                        case "lights on":
-                        case "light on":
-                            resultOk = true;
-                            if(!lightStatus){
-                                Log.d(TAG, "light on");
-                                Handler handler = new Handler();
-                                handler.postDelayed(new Runnable() {
-                                    public void run() {
-                                        cam = Camera.open();
-                                        utility.turnOnFlashLight(getPackageManager(),cam);
-                                        lightStatus = true;
-                                    }
-                                }, 1000);
-                            }
-                            firstTime = true;
-                            break search;
-                        case "lights off":
-                        case "light off":
-                            resultOk = true;
-                            if(lightStatus) {
-                                Log.d(TAG, "light off");
-                                Handler handler = new Handler();
-                                handler.postDelayed(new Runnable() {
-                                    public void run() {
-                                        utility.turnOffFlashLight(getPackageManager(), cam);
-                                        lightStatus = false;
-                                    }
-                                }, 1000);
-                            }
-                            firstTime = true;
-                            break search;
+                    case "lights on":
+                    case "light on":
+                        resultOk = true;
+                        if (!lightStatus) {
+                            Log.d(TAG, "light on");
+                            Handler handler = new Handler();
+                            handler.postDelayed(new Runnable() {
+                                public void run() {
+                                    cam = Camera.open();
+                                    utility.turnOnFlashLight(getPackageManager(), cam);
+                                    lightStatus = true;
+                                }
+                            }, 1000);
+                        }
+                        firstTime = true;
+                        break search;
+                    case "lights off":
+                    case "light off":
+                        resultOk = true;
+                        if (lightStatus) {
+                            Log.d(TAG, "light off");
+                            Handler handler = new Handler();
+                            handler.postDelayed(new Runnable() {
+                                public void run() {
+                                    utility.turnOffFlashLight(getPackageManager(), cam);
+                                    lightStatus = false;
+                                }
+                            }, 1000);
+                        }
+                        firstTime = true;
+                        break search;
 
-                        case "silent mode":
-                            resultOk = true;
-                            utility.ringerModeSilent(mobilemode, tts);
-                            firstTime = true;
-                            break search;
+                    case "silent mode":
+                        resultOk = true;
+                        utility.ringerModeSilent(mobilemode, tts);
+                        firstTime = true;
+                        break search;
 
-                        case "normal mode":
-                            resultOk = true;
-                            utility.ringerModeNormal(mobilemode);
-                            firstTime = true;
-                            break search;
-                        case "wifi on":
-                            resultOk = true;
-                            firstTime = true;
-                            utility.wifiChange(true,getApplicationContext());
-                            break search;
-                        case "wifi off":
-                            resultOk = true;
-                            firstTime = true;
-                            utility.wifiChange(false,getApplicationContext());
-                            break search;
-                        case "connection on":
-                            resultOk = true;
-                            firstTime = true;
-                            utility.connectionChange(true);
-                            break search;
-                        case "connection off":
-                            resultOk = true;
-                            firstTime = true;
-                            utility.connectionChange(false);
-                            break search;
+                    case "normal mode":
+                        resultOk = true;
+                        utility.ringerModeNormal(mobilemode);
+                        firstTime = true;
+                        break search;
+                    case "wifi on":
+                        resultOk = true;
+                        firstTime = true;
+                        utility.wifiChange(true, getApplicationContext());
+                        break search;
+                    case "wifi off":
+                        resultOk = true;
+                        firstTime = true;
+                        utility.wifiChange(false, getApplicationContext());
+                        break search;
+                    case "connection on":
+                        resultOk = true;
+                        firstTime = true;
+                        utility.connectionChange(true);
+                        break search;
+                    case "connection off":
+                        resultOk = true;
+                        firstTime = true;
+                        utility.connectionChange(false);
+                        break search;
 
-                        default:
-                            // command not recognized, restart
-                            firstTime = true;
-                            break;
-                    }
-
+                    default:
+                        // command not recognized, restart
+                        firstTime = true;
+                        break;
                 }
             }
 
 
             if(firstTime){
-                // deplay for play sound
+                // delay for play sound
                 long timeToWait = 2000;
                 if(!resultOk) {
-                    playFailSound();
+                    playFailSound("result fail");
                 }else{
                     playOkSound();
                     timeToWait*=2;
@@ -591,7 +582,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     }
 
     /**
-     * Restart the recognizer
+     * Restart the recognizer , the original without sound
      */
     public void restartListening(){
 
@@ -610,7 +601,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     }
 
     /**
-     * Restart the recognizer
+     * Restart the recognizer using sound
      */
     public void startListening(){
         // for call again
@@ -629,20 +620,23 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
     }
 
+    /**
+     * getCommand
+     * @param command
+     * @return
+     */
     public String getCommand(int command){
-        String[] data = {
-                getString(R.string.pref_messages_command),
-                getString(R.string.pref_cam_command),
-                getString(R.string.pref_silent_phone_command),
-                getString(R.string.pref_control_wifi_command),
-                getString(R.string.pref_control_3g_command),
-                getString(R.string.pref_set_alarm_command)
-        };
-        List<String> commads = new ArrayList<String>(Arrays.asList(data));
-
+        Resources res = getResources();
+        String[] data = res.getStringArray(R.array.pref_labels);
+        List<String> commads = new ArrayList<>(Arrays.asList(data));
         return commads.get(command);
     }
 
+    /**
+     * createAlarm
+     * @param aux string recognized
+     * @param item string auxiliar
+     */
     public void createAlarm(String aux,String item){
         int hourAlarm = 0;
         int minutesAlarm = 0;
@@ -691,10 +685,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         }
     }
 
-
+    /**
+     * startTimer : used only in api lv 19 , current is 16
+     * @param aux
+     * @param item
+     */
     public void startTimer(String aux,String item) {
         int seconds = 0;
-        int minutes = 0;
+        int minutes;
         if(aux.isEmpty())
             return;
 
@@ -720,14 +718,19 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         }
     }
 
-
-    private void playFailSound(){
+    /**
+     * playFailSound
+     * @param msg only for debug
+     */
+    private void playFailSound(String msg){
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
             soundPool.play(failSound, 1f, 1f, 1, 0, 1f);
-            Log.d("Test", "Played fail sound");
+            Log.d("Test", "Played fail sound >>" + msg);
     }
 
-
+    /**
+     * playOkSound : play when the recognizer is ok
+     */
     private void playOkSound(){
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
             soundPool.play(okSound, 1f, 1f, 1, 0, 1f);

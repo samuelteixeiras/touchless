@@ -19,26 +19,46 @@ import java.util.HashMap;
 import java.util.Locale;
 
 /**
+ * Utility :
+ * methods used on service
  * Created by Samuel PC on 06/04/2015.
  */
 public class Utility extends Activity {
 
     final String RINGER_MODE_SILENT = " ringer mode silent";
 
+    /**
+     * ringerModeSilent : set ringer phone silent mode
+     * @param mobilemode
+     * @param tts
+     */
     public void ringerModeSilent(AudioManager mobilemode,TextToSpeech tts){
         textToSpeech(RINGER_MODE_SILENT,mobilemode,tts);
         mobilemode.setRingerMode(AudioManager.RINGER_MODE_SILENT);
     }
 
+    /**
+     * ringerModeNormal : set ringer phone normal mode
+     * @param mobilemode
+     */
     public void ringerModeNormal(AudioManager mobilemode) {
         mobilemode.setRingerMode(AudioManager.RINGER_MODE_NORMAL);
     }
 
+    /**
+     * wifiChange : enable and disable wifi
+     * @param status
+     * @param context
+     */
     public void wifiChange(boolean status,Context context){
         WifiManager wifiManager = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);
         wifiManager.setWifiEnabled(status);
     }
 
+    /**
+     * connectionChange : enable and disable connection
+     * @param status
+     */
     public void connectionChange(Boolean status){
         ConnectivityManager dataManager;
         dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -48,23 +68,31 @@ public class Utility extends Activity {
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
         }
-        dataMtd.setAccessible(true);
+        if(dataMtd != null)
+            dataMtd.setAccessible(true);
+        else
+         return;
+
         try {
             dataMtd.invoke(dataManager, status);        //True - to enable data connectivity .
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        } catch (InvocationTargetException e) {
+        } catch (IllegalAccessException  | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * textToSpeech: speak msg
+     * @param speakThis
+     * @param mAudioManager
+     * @param tts
+     */
     public void textToSpeech(String speakThis,AudioManager mAudioManager,TextToSpeech tts){
 
         // speak from listening
         tts.setPitch(0.7f);
         mAudioManager.setStreamSolo(AudioManager.STREAM_VOICE_CALL, false);
 
-        HashMap<String, String> hash = new HashMap<String,String>();
+        HashMap<String, String> hash = new HashMap<>();
         hash.put(TextToSpeech.Engine.KEY_PARAM_STREAM,
                 String.valueOf(AudioManager.STREAM_NOTIFICATION));
 
@@ -77,18 +105,27 @@ public class Utility extends Activity {
 
     }
 
+    /**
+     * readMessagens : read unread messages
+     * @param mAudioManager
+     * @param tts
+     */
     public void readMessagens(AudioManager mAudioManager,TextToSpeech tts){
         Uri uriSMSURI = Uri.parse("content://sms/inbox");
         Cursor cur = getContentResolver().query(uriSMSURI, null, null, null,null);
         String sms = "";
         while (cur.moveToNext()) {
-            sms="";
             sms += "From :" + cur.getString(2) + " : " + cur.getString(12)+"\n";
             textToSpeech(sms,mAudioManager,tts);
         }
     }
 
 
+    /**
+     * turnOnFlashLight: turn on the flash light
+     * @param pm
+     * @param cam
+     */
     public void turnOnFlashLight(PackageManager pm,Camera cam) {
         try {
             if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
@@ -103,6 +140,11 @@ public class Utility extends Activity {
         }
     }
 
+    /**
+     * turnOffFlashLight: turn off the flash light
+     * @param pm
+     * @param cam
+     */
     public void turnOffFlashLight(PackageManager pm,Camera cam) {
         try {
             if (pm.hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH)) {
@@ -115,7 +157,9 @@ public class Utility extends Activity {
     }
 
 
-
+    /*
+        testing
+     */
     public void capturePhoto() {
         Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -123,6 +167,5 @@ public class Utility extends Activity {
             startActivityForResult(intent,123);
         }
     }
-
 
 }

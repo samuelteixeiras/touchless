@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -32,8 +33,6 @@ import java.util.List;
 
 public class MainActivity extends ActionBarActivity {
 
-    private static final String LOG_TAG = MainActivity.class.getSimpleName();
-    private static final int VOICE_RECOGNITION_REQUEST_CODE = 1001;
     private static final int SHORTCUT_NOTIFICATION_ID = 3000;
     private static ListView mListView;
 
@@ -75,11 +74,17 @@ public class MainActivity extends ActionBarActivity {
 
         listPrefs = new ArrayList<Boolean>();
         listPrefs.add(settings.getBoolean(getString(R.string.pref_messages_key), true));
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_key), true));
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_silent_phone_key), true));
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_key), true));
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_3g_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_on_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_off_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_silent_mode_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_normal_mode_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_on_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_off_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_connection_on_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_connection_off_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_set_alarm_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_time_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_control_day_key), true));
 
     }
 
@@ -117,6 +122,10 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    /**
+     * savePreference: save preference clicking on checkbox
+     * @param view
+     */
     public void savePreference(View view){
 
         boolean checked = ((CheckBox) view).isChecked();
@@ -186,41 +195,21 @@ public class MainActivity extends ActionBarActivity {
         }
 
         public ArrayList<Options> populateOptions(){
-            String[] data = {
-                    getString(R.string.pref_messages_label),
-                    getString(R.string.pref_cam_label),
-                    getString(R.string.pref_silent_phone_label),
-                    getString(R.string.pref_control_wifi_label),
-                    getString(R.string.pref_control_3g_label),
-                    getString(R.string.pref_set_alarm_label)
-            };
+
+            Resources res = getResources();
+            String[] data = res.getStringArray(R.array.pref_labels);
+
             List<String> labels = new ArrayList<String>(Arrays.asList(data));
 
-            String[] keys = {
-                    getString(R.string.pref_messages_key),
-                    getString(R.string.pref_cam_key),
-                    getString(R.string.pref_silent_phone_key),
-                    getString(R.string.pref_control_wifi_key),
-                    getString(R.string.pref_control_3g_key),
-                    getString(R.string.pref_set_alarm_key)
-            };
+            String[] keys = res.getStringArray(R.array.pref_keys);
 
-            String[] index = {
-                    "0",
-                    "1",
-                    "2",
-                    "3",
-                    "4",
-                    "5"
-            };
-            List<String> listIndex = new ArrayList<String>(Arrays.asList(index));
             List<String> listKeys = new ArrayList<String>(Arrays.asList(keys));
 
             ArrayList<Options> options = new ArrayList<Options>();
             for (int i=0; i < labels.size();i++){
                 Options option = new Options(labels.get(i),
                                              listPrefs.get(i),
-                                             listIndex.get(i),
+                                             String.valueOf(i),
                                              listKeys.get(i));
                 options.add(option);
             }
@@ -341,7 +330,6 @@ public class MainActivity extends ActionBarActivity {
                 .setContentText("Show Options")
                 .setAutoCancel(true)
                 .setOngoing(true);
-                //.setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE | Notification.DEFAULT_LIGHTS);
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         mNotificationManager.notify(0, mBuilder.build());
 
