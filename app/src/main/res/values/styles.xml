@@ -20,6 +20,11 @@
     </style>
 
 
+    <!-- Settings activity theme. -->
+    <style name="AboutTheme" parent="AppTheme">
+        <item name="android:windowBackground">@color/shortcut_windowBackground</item>
+    </style>
+
     <!-- Style for forecast listview -->
     <style name="ShortCutListStyle">
         <!-- Here it's a stub.  In screens of sufficient width, this style includes modifications

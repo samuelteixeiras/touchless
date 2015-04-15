@@ -7,6 +7,7 @@ import android.content.res.Resources;
 import android.hardware.Camera;
 import android.media.AudioManager;
 import android.media.SoundPool;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.CountDownTimer;
@@ -52,6 +53,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     static final int MSG_RECOGNIZER_START_LISTENING_SOUND = 5;
     TextToSpeech tts;
     Camera cam = null;
+    ConnectivityManager dataManager;
 
 
     AudioManager mobilemode;
@@ -83,7 +85,8 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
         mSpeechRecognizerIntent.putExtra(RecognizerIntent.EXTRA_CALLING_PACKAGE,
                 this.getPackageName());
-        tts = new TextToSpeech(this, this);
+        if(tts == null)
+            tts = new TextToSpeech(this, this);
 
 
         soundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
@@ -261,7 +264,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     @Override
     public void onDestroy()
     {
-        super.onDestroy();
+
 
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
@@ -274,7 +277,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         if(tts!=null) {
             tts.stop();
             tts.shutdown();
-            tts=null;
+            Log.d(TAG, " tts destroy");
         }
 
         if (mIsCountDownOn)
@@ -285,6 +288,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         {
             mSpeechRecognizer.destroy();
         }
+        super.onDestroy();
 
         Log.d(TAG, "onDestroy");
     }
@@ -471,7 +475,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
                     case "read messages":
                         resultOk = true;
-                        utility.readMessagens(mAudioManager, tts);
+                        utility.readMessagens(mAudioManager, tts,getContentResolver());
                         firstTime = true;
                         break search;
 
@@ -529,14 +533,16 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         utility.wifiChange(false, getApplicationContext());
                         break search;
                     case "connection on":
+                        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
                         resultOk = true;
                         firstTime = true;
-                        utility.connectionChange(true);
+                        utility.connectionChange(true,dataManager);
                         break search;
                     case "connection off":
                         resultOk = true;
                         firstTime = true;
-                        utility.connectionChange(false);
+                        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+                        utility.connectionChange(false,dataManager);
                         break search;
 
                     default:

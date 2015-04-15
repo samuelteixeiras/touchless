@@ -32,7 +32,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-
+        <activity
+            android:name=".AboutActivity"
+            android:label="@string/action_about"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AboutTheme">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="shortcut.gdd.android.com.shortcut.MainActivity" />
+        </activity>
 
         <service android:name=".ShortcutService" />
     </application>

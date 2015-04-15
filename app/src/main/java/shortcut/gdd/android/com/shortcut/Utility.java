@@ -1,8 +1,7 @@
 package shortcut.gdd.android.com.shortcut;
 
-import android.app.Activity;
+import android.content.ContentResolver;
 import android.content.Context;
-import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.hardware.Camera;
@@ -10,7 +9,6 @@ import android.media.AudioManager;
 import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.net.wifi.WifiManager;
-import android.provider.MediaStore;
 import android.speech.tts.TextToSpeech;
 
 import java.lang.reflect.InvocationTargetException;
@@ -23,7 +21,7 @@ import java.util.Locale;
  * methods used on service
  * Created by Samuel PC on 06/04/2015.
  */
-public class Utility extends Activity {
+public class Utility  {
 
     final String RINGER_MODE_SILENT = " ringer mode silent";
 
@@ -59,9 +57,9 @@ public class Utility extends Activity {
      * connectionChange : enable and disable connection
      * @param status
      */
-    public void connectionChange(Boolean status){
-        ConnectivityManager dataManager;
-        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+    public void connectionChange(Boolean status,ConnectivityManager dataManager){
+        //ConnectivityManager dataManager;
+        //dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         Method dataMtd = null;
         try {
             dataMtd = ConnectivityManager.class.getDeclaredMethod("setMobileDataEnabled", boolean.class);
@@ -110,9 +108,9 @@ public class Utility extends Activity {
      * @param mAudioManager
      * @param tts
      */
-    public void readMessagens(AudioManager mAudioManager,TextToSpeech tts){
+    public void readMessagens(AudioManager mAudioManager,TextToSpeech tts,ContentResolver contentResolver){
         Uri uriSMSURI = Uri.parse("content://sms/inbox");
-        Cursor cur = getContentResolver().query(uriSMSURI, null, null, null,null);
+        Cursor cur = contentResolver.query(uriSMSURI, null, null, null,null);
         String sms = "";
         while (cur.moveToNext()) {
             sms += "From :" + cur.getString(2) + " : " + cur.getString(12)+"\n";
@@ -160,6 +158,7 @@ public class Utility extends Activity {
     /*
         testing
      */
+    /*
     public void capturePhoto() {
         Intent intent = new Intent(MediaStore.INTENT_ACTION_STILL_IMAGE_CAMERA);
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
@@ -167,5 +166,6 @@ public class Utility extends Activity {
             startActivityForResult(intent,123);
         }
     }
+    */
 
 }
