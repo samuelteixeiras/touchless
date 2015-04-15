@@ -61,6 +61,7 @@ public class Utility extends Activity {
     public void textToSpeech(String speakThis,AudioManager mAudioManager,TextToSpeech tts){
 
         // speak from listening
+        tts.setPitch(0.7f);
         mAudioManager.setStreamSolo(AudioManager.STREAM_VOICE_CALL, false);
 
         HashMap<String, String> hash = new HashMap<String,String>();
