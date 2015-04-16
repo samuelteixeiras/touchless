@@ -44,7 +44,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
     protected boolean mIsListening;
     protected volatile boolean mIsCountDownOn;
-    private static boolean mIsStreamSolo;
+    private static boolean mIsStreamMute;
 
     static final int MSG_RECOGNIZER_START_LISTENING = 1;
     static final int MSG_RECOGNIZER_CANCEL = 2;
@@ -70,6 +70,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     private SoundPool soundPool;
     private int failSound;
     private int okSound;
+
 
     @Override
     public void onCreate()
@@ -121,11 +122,11 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN)
                     {
                         // turn off beep sound
-                        if (!mIsStreamSolo)
+                        if (!mIsStreamMute)
                         {
                             mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, true);
                             mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, true);
-                            mIsStreamSolo = true;
+                            mIsStreamMute = true;
                         }
                     }
                     if (!target.mIsListening)
@@ -134,44 +135,16 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         target.mIsListening = true;
                         Log.d(TAG, "message start listening"); 
 
-
-                        // android bug?
-                        if(mTimer == null) {
-                            mTimer = new CountDownTimer(12000, 5000) {
-                                @Override
-                                public void onTick(long millisUntilFinished) {
-                                    //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
-                                }
-                                @Override
-                                public void onFinish() {
-                                    firstTime = true;
-                                    playFailSound("mtimer 1");
-                                    mTimer.cancel();
-                                    Handler handler = new Handler();
-                                    handler.postDelayed(new Runnable() {
-                                        public void run() {
-                                            Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
-                                            mSpeechRecognizer.cancel();
-                                            mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
-                                        }
-                                    }, 1000);
-                                }
-                            };
-                        }
-                        mTimer.start();
-
-
-
                     }else{
                         Log.d(TAG, "message not start listening"); 
                     }
                     break;
 
                 case MSG_RECOGNIZER_CANCEL:
-                    if (mIsStreamSolo)
+                    if (mIsStreamMute)
                     {
                         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-                        mIsStreamSolo = false;
+                        mIsStreamMute = false;
                     }
                     target.mSpeechRecognizer.cancel();
                     target.mIsListening = false;
@@ -196,36 +169,12 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         target.mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
                         target.mIsListening = true;
                         Log.d(TAG, "message start listening sound"); 
-
-                        // android bug?
-                        if(mTimer == null) {
-                            mTimer = new CountDownTimer(12000, 5000) {
-                                @Override
-                                public void onTick(long millisUntilFinished) {
-                                    //Log.d("Speech","seconds remaining: " + millisUntilFinished / 1000);
-                                }
-                                @Override
-                                public void onFinish() {
-                                    firstTime = true;
-                                    playFailSound("mTimer 2");
-                                    mTimer.cancel();
-
-                                    Handler handler = new Handler();
-                                    handler.postDelayed(new Runnable() {
-                                        public void run() {
-                                            Log.d("Speech", "Timer.onFinish: Timer Finished, Restart recognizer");
-                                            mSpeechRecognizer.cancel();
-                                            mSpeechRecognizer.startListening(target.mSpeechRecognizerIntent);
-                                        }
-                                    }, 1000);
-                                }
-                            };
-                        }
-                        mTimer.start();
-
                     }else{
                         Log.d(TAG, "message not started"); 
                     }
+
+                    mIsStreamMute = false;
+
                     break;
             }
         }
@@ -355,16 +304,24 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 mNoSpeechCountDown.cancel();
             }
             mIsListening = false;
-            Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
-            try
-            {
-                firstTime = true;
-                mServerMessenger.send(message);
-            }
-            catch (RemoteException e)
-            {
-                Log.d(TAG, "error = " + e);
-            }
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING);
+                    try
+                    {
+                        firstTime = true;
+                        mServerMessenger.send(message);
+                    }
+                    catch (RemoteException e)
+                    {
+                        Log.d(TAG, "error = " + e);
+                    }
+                }
+            }, 2500);
+
+
         }
 
         @Override
@@ -616,8 +573,19 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         try
         {
             mServerMessenger.send(message);
-            message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING_SOUND);
-            mServerMessenger.send(message);
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    Message message = Message.obtain(null, MSG_RECOGNIZER_START_LISTENING_SOUND);
+                    try {
+                        mServerMessenger.send(message);
+                    } catch (RemoteException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }, 1000);
+
         }
         catch (RemoteException e)
         {
@@ -729,7 +697,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
      * @param msg only for debug
      */
     private void playFailSound(String msg){
+        mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
             soundPool.play(failSound, 1f, 1f, 1, 0, 1f);
             Log.d("Test", "Played fail sound >>" + msg);
     }
@@ -738,7 +708,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
      * playOkSound : play when the recognizer is ok
      */
     private void playOkSound(){
+        mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
             soundPool.play(okSound, 1f, 1f, 1, 0, 1f);
             Log.d("Test", "Played ok sound");
     }
