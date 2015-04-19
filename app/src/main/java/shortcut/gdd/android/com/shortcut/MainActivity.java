@@ -2,9 +2,11 @@ package shortcut.gdd.android.com.shortcut;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -44,7 +46,7 @@ public class MainActivity extends ActionBarActivity {
 
     static View rootView;
 
-    private boolean serverStatus = false;
+    private static boolean serverStatus = false;
 
     private boolean startAfterBind = false;
 
@@ -52,7 +54,12 @@ public class MainActivity extends ActionBarActivity {
 
     public static ArrayList<Boolean> listPrefs;
 
+    public String STOP_SERVER_KEY = "STOP_SERVER";
+
+    BroadcastReceiver receiver;
+
     @Override
+
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
@@ -64,9 +71,32 @@ public class MainActivity extends ActionBarActivity {
         }
 
         loadPrefs();
+        registerIntentFilter();
 
     }
 
+    /**
+     * registerIntentFilter: used for stop server on notification button
+     */
+    public void registerIntentFilter(){
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(STOP_SERVER_KEY);
+        // Add other actions as needed
+
+        receiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                if (intent.getAction().equals(STOP_SERVER_KEY)) {
+                    if(serverStatus){
+                        stopServer();
+                        removeNotification();
+                    }
+                }
+            }
+        };
+
+        registerReceiver(receiver, filter);
+    }
 
     public void loadPrefs(){
 
@@ -143,11 +173,9 @@ public class MainActivity extends ActionBarActivity {
         Button button = (Button) rootView.findViewById(R.id.startButton);
 
         if(!serverStatus){
-            serverStatus = true;
             startServer();
             button.setText(getString(R.string.btn_text_stop));
         }else{
-            serverStatus = false;
             stopServer();
             button.setText(getString(R.string.btn_text_start));
         }
@@ -157,13 +185,9 @@ public class MainActivity extends ActionBarActivity {
     private void restoreButtonState(){
         Button button = (Button) rootView.findViewById(R.id.startButton);
 
-        if(!serverStatus){
-            serverStatus = true;
-            startServer();
+        if(serverStatus){
             button.setText(getString(R.string.btn_text_stop));
         }else{
-            serverStatus = false;
-            stopServer();
             button.setText(getString(R.string.btn_text_start));
         }
     }
@@ -191,9 +215,9 @@ public class MainActivity extends ActionBarActivity {
             mListView = (ListView) rootView.findViewById(R.id.listview_shorcut);
             mListView.setAdapter(adapter);
             getActivity();
-
             return rootView;
         }
+
 
         public ArrayList<Options> populateOptions(){
 
@@ -247,6 +271,9 @@ public class MainActivity extends ActionBarActivity {
     };
 
     public  void startServer() {
+
+        serverStatus = true;
+
         if (!mBound) {
             bindService(new Intent(this, ShortcutService.class), mConnection,
                     Context.BIND_AUTO_CREATE);
@@ -263,6 +290,7 @@ public class MainActivity extends ActionBarActivity {
     }
 
     public void stopServer() {
+        serverStatus = false;
         if (mBound) {
             unbindService(mConnection);
             mBound = false;
@@ -280,6 +308,11 @@ public class MainActivity extends ActionBarActivity {
 
     }
 
+    @Override
+    protected void onResume() {
+        super.onResume();
+        restoreButtonState();
+    }
 
     @Override
     public void onSaveInstanceState(Bundle savedInstanceState) {
@@ -313,27 +346,41 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onStop() {
         super.onStop();
-
-        startNotification();
+        if(serverStatus){
+            startNotification();
+        }
     }
 
+    @Override
+    protected void onDestroy() {
+        removeNotification();
+        super.onDestroy();
+
+    }
 
     public void startNotification(){
 
-        Intent notificationIntent = new Intent(this, MainActivity.class);
-        notificationIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-        PendingIntent intent = PendingIntent.getActivity(this, 0, notificationIntent, 0);
+        Intent stopServerIntend = new Intent(STOP_SERVER_KEY);
+        PendingIntent stopPendingIntent = PendingIntent.getBroadcast(this, 0, stopServerIntend, 0);
 
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_mic_48)
                 .setContentTitle("Touchless")
-                .setContentIntent(intent)
                 .setContentText("Show Options")
-                .setAutoCancel(true)
-                .setOngoing(true);
+                .setPriority(NotificationCompat.PRIORITY_MAX)
+                .setStyle(new NotificationCompat.BigTextStyle()
+                        .bigText("press button to stop"))
+                .addAction(R.drawable.ic_close,
+                        getString(R.string.btn_text_stop), stopPendingIntent);
+
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-        mNotificationManager.notify(0, mBuilder.build());
+        mNotificationManager.notify(SHORTCUT_NOTIFICATION_ID, mBuilder.build());
 
     }
+
+
+
+
+
 
 }
