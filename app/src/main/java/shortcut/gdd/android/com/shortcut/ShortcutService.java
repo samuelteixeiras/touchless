@@ -3,6 +3,7 @@ package shortcut.gdd.android.com.shortcut;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.hardware.Camera;
 import android.media.AudioManager;
@@ -28,7 +29,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * ShortcutService: executed in background
@@ -70,13 +73,15 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     private SoundPool soundPool;
     private int failSound;
     private int okSound;
-
-
+    HashMap<String,String> qeaHashMap = new HashMap<>();
+    Context mContext;
+    SharedPreferences settings;
     @Override
     public void onCreate()
     {
         super.onCreate();
         utility = new Utility();
+        mContext = getApplicationContext();
         mobilemode = (AudioManager) this.getSystemService(Context.AUDIO_SERVICE);
         mAudioManager = (AudioManager) getSystemService(Context.AUDIO_SERVICE);
         mSpeechRecognizer = SpeechRecognizer.createSpeechRecognizer(this);
@@ -89,11 +94,11 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         if(tts == null)
             tts = new TextToSpeech(this, this);
 
-
+        qeaHashMap = utility.getQea(mContext);
         soundPool = new SoundPool(2, AudioManager.STREAM_MUSIC, 0);
         failSound = soundPool.load(this, R.raw.fail, 1);
         okSound = soundPool.load(this, R.raw.ok, 1);
-
+        settings = getSharedPreferences(MainActivity.PREFS_NAME, 0);
         Log.d(TAG, "Creating listening");
 
     }
@@ -360,7 +365,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             String aux = "";
             Boolean resultOk = false;
             search:  for(String item : list){
+
                 Log.d(TAG, "item  >"+ item +"<");
+
                 // modify item case set alarm found
                 if(item.contains("set an alarm for")){
                     aux = item;
@@ -380,6 +387,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                 }else switch (item) {
 
                     case "what time is it":
+                        if(!settings.getBoolean(getString(R.string.pref_control_time_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         SimpleDateFormat sdfHour = new SimpleDateFormat("HH");
                         SimpleDateFormat sdfMinutes = new SimpleDateFormat("mm");
@@ -391,7 +401,11 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         utility.textToSpeech(speakTime, mAudioManager, tts);
                         firstTime = true;
                         break search;
+
                     case "what day is it":
+                        if(!settings.getBoolean(getString(R.string.pref_control_day_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         SimpleDateFormat day = new SimpleDateFormat("dd");
                         SimpleDateFormat month = new SimpleDateFormat("MMMM");
@@ -414,10 +428,14 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                             break search;*/
 
                     case "set an alarm for":
+                        if(!settings.getBoolean(getString(R.string.pref_set_alarm_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         createAlarm(aux, item);
                         firstTime = true;
                         break search;
+
                     /* only in api lv 19 , current 16
                     case "set timer for":
                         resultOk = true;
@@ -425,20 +443,27 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         firstTime = true;
                         break search;
                     */
+                    /* not implemented yet
                     case "weather":
                         resultOk = true;
                         utility.textToSpeech("weather", mAudioManager, tts);
                         firstTime = true;
                         break search;
-
+                    */
                     case "read messages":
+                        if(!settings.getBoolean(getString(R.string.pref_messages_key), true)){
+                            continue;
+                        }
                         resultOk = true;
-                        utility.readMessagens(mAudioManager, tts,getContentResolver());
+                       // utility.readMessagens(mAudioManager, tts,getContentResolver());
                         firstTime = true;
                         break search;
 
                     case "lights on":
                     case "light on":
+                        if(!settings.getBoolean(getString(R.string.pref_cam_on_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         if (!lightStatus) {
                             Log.d(TAG, "light on");
@@ -453,8 +478,12 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         }
                         firstTime = true;
                         break search;
+
                     case "lights off":
                     case "light off":
+                        if(!settings.getBoolean(getString(R.string.pref_cam_off_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         if (lightStatus) {
                             Log.d(TAG, "light off");
@@ -470,33 +499,55 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
                         break search;
 
                     case "silent mode":
+                        if(!settings.getBoolean(getString(R.string.pref_silent_mode_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         utility.ringerModeSilent(mobilemode, tts);
                         firstTime = true;
                         break search;
 
                     case "normal mode":
+                        if(!settings.getBoolean(getString(R.string.pref_normal_mode_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         utility.ringerModeNormal(mobilemode);
                         firstTime = true;
                         break search;
+
                     case "wifi on":
+                        if(!settings.getBoolean(getString(R.string.pref_control_wifi_on_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         firstTime = true;
-                        utility.wifiChange(true, getApplicationContext());
+                        utility.wifiChange(true, mContext);
                         break search;
+
                     case "wifi off":
+                        if(!settings.getBoolean(getString(R.string.pref_control_wifi_off_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         firstTime = true;
-                        utility.wifiChange(false, getApplicationContext());
+                        utility.wifiChange(false, mContext);
                         break search;
+
                     case "connection on":
+                        if(!settings.getBoolean(getString(R.string.pref_control_connection_on_key), true)){
+                            continue;
+                        }
                         dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
                         resultOk = true;
                         firstTime = true;
                         utility.connectionChange(true,dataManager);
                         break search;
+
                     case "connection off":
+                        if(!settings.getBoolean(getString(R.string.pref_control_connection_off_key), true)){
+                            continue;
+                        }
                         resultOk = true;
                         firstTime = true;
                         dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -505,6 +556,19 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
                     default:
                         // command not recognized, restart
+                        for(Map.Entry<String, String> entry : qeaHashMap.entrySet()) {
+                            String key = entry.getKey();
+                            String value = entry.getValue();
+
+                            if(item.equals(key)){
+                                resultOk = true;
+                                utility.textToSpeech(value, mAudioManager, tts);
+                                firstTime = true;
+                                break search;
+                            }
+
+                        }
+
                         firstTime = true;
                         break;
                 }

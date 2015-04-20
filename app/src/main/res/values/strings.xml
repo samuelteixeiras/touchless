@@ -16,6 +16,8 @@
 
     <string name="content_authority">shortcut.gdd.android.com.shortcut</string>
 
+    <string name="qea_dialog_item_title">Do you want remove this?</string>
+
     <string-array name="pref_keys">
         <item>cam_light_on</item>
         <item>cam_light_off</item>

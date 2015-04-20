@@ -1,9 +1,11 @@
 package shortcut.gdd.android.com.shortcut;
 
 import android.annotation.TargetApi;
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -20,7 +22,6 @@ import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import java.util.ArrayList;
 
@@ -35,6 +36,7 @@ public class QeaDisplayActivity extends ActionBarActivity {
     static ArrayAdapter mAdapter = null;
     static ArrayList<String> questions = new ArrayList<String>();
     static ArrayList<String> answers = new ArrayList<String>();
+    static ArrayList<Integer> ids = new ArrayList<Integer>();
 
     private static final String[] QEA_COLUMNS = {
             QeaContract.QEAEntry.TABLE_NAME + "." + QeaContract.QEAEntry._ID,
@@ -133,6 +135,7 @@ public class QeaDisplayActivity extends ActionBarActivity {
 
             questions = new ArrayList<>();
             answers = new ArrayList<>();
+            ids = new ArrayList<>();
             mContext = getActivity();
 
             Cursor qeaCursor = mContext.getContentResolver().query(
@@ -148,8 +151,10 @@ public class QeaDisplayActivity extends ActionBarActivity {
                 for (int i = 0; qeaCursor.getCount() > i; i++) {
                     int qId = qeaCursor.getColumnIndex(QeaContract.QEAEntry.COLUMN_QUESTION);
                     int aId = qeaCursor.getColumnIndex(QeaContract.QEAEntry.COLUMN_ANSWER);
+                    int id = qeaCursor.getColumnIndex(QeaContract.QEAEntry._ID);
                     questions.add(qeaCursor.getString(qId));
                     answers.add(qeaCursor.getString(aId));
+                    ids.add(qeaCursor.getInt(id));
                     qeaCursor.moveToNext();
                 }
                 qeaCursor.close();
@@ -169,12 +174,63 @@ public class QeaDisplayActivity extends ActionBarActivity {
 
             listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> parent, View view,
-                                        int position, long id) {
-                    Toast.makeText(getActivity(),
-                            "Click ListItem Number " + position, Toast.LENGTH_LONG)
-                            .show();
+                public void onItemClick(AdapterView<?> parent, final View view,
+                                        final int position, long id) {
+
+                    mContext = getActivity();
+                    final String item = (String) parent.getItemAtPosition(position);
+                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(
+                            mContext);
+
+                    // set title
+                    alertDialogBuilder.setTitle(getString(R.string.qea_dialog_item_title));
+
+                    String aux = answers.get(position);
+                    // set dialog message
+                    alertDialogBuilder
+                            .setMessage("Answer:"+aux+".\n\nClick yes to remove item!")
+                            .setCancelable(false)
+                            .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog, int id) {
+
+                                    answers.remove(position);
+                                    view.animate().setDuration(1000).alpha(0)
+                                            .withEndAction(new Runnable() {
+                                                @Override
+                                                public void run() {
+                                                    questions.remove(item);
+                                                    mAdapter.notifyDataSetChanged();
+                                                    view.setAlpha(1);
+                                                }
+                                            });
+                                    int index = ids.get(position);
+                                    ids.remove(position);
+
+                                    mContext = getActivity();
+                                    mContext.getContentResolver().delete(QeaContract.QEAEntry.CONTENT_URI,
+                                            QeaContract.QEAEntry._ID + " = ?", new String[]{String.valueOf(index)});
+
+                            }
+                            })
+                            .setNegativeButton("No",new DialogInterface.OnClickListener() {
+                                public void onClick(DialogInterface dialog,int id) {
+                                    // if this button is clicked, just close
+                                    // the dialog box and do nothing
+                                    dialog.cancel();
+                                }
+                            });
+
+                    // create alert dialog
+                    AlertDialog alertDialog = alertDialogBuilder.create();
+
+                    // show it
+                    alertDialog.show();
                 }
+
+
+
+
+
             });
 
 

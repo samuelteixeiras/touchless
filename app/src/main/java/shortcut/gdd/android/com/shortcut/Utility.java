@@ -16,6 +16,8 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
 
+import shortcut.gdd.android.com.shortcut.data.QeaContract;
+
 /**
  * Utility :
  * methods used on service
@@ -152,6 +154,38 @@ public class Utility  {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    public HashMap<String,String> getQea(Context mContext){
+
+        HashMap<String,String> hashMap = new HashMap<>();
+
+        String[] QEA_COLUMNS = {
+                QeaContract.QEAEntry.TABLE_NAME + "." + QeaContract.QEAEntry._ID,
+                QeaContract.QEAEntry.COLUMN_DATE,
+                QeaContract.QEAEntry.COLUMN_QUESTION,
+                QeaContract.QEAEntry.COLUMN_ANSWER
+        };
+
+        Cursor qeaCursor = mContext.getContentResolver().query(
+                QeaContract.QEAEntry.CONTENT_URI,
+                QEA_COLUMNS,
+                null,
+                null,
+                null
+        );
+
+        if(qeaCursor!=null && qeaCursor.getCount()>0) {
+            qeaCursor.moveToFirst();
+            for (int i = 0; qeaCursor.getCount() > i; i++) {
+                int qId = qeaCursor.getColumnIndex(QeaContract.QEAEntry.COLUMN_QUESTION);
+                int aId = qeaCursor.getColumnIndex(QeaContract.QEAEntry.COLUMN_ANSWER);
+                hashMap.put(qeaCursor.getString(qId),qeaCursor.getString(aId));
+                qeaCursor.moveToNext();
+            }
+            qeaCursor.close();
+        }
+        return hashMap;
     }
 
 
