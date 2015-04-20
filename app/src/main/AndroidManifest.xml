@@ -3,7 +3,7 @@
     package="shortcut.gdd.android.com.shortcut" >
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CALL_PHONE" />
+    <!--  used on recognizer -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <!--  read messagens -->
     <uses-permission android:name="android.permission.READ_SMS" />
