@@ -10,6 +10,7 @@ import android.content.IntentFilter;
 import android.content.ServiceConnection;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.os.Message;
@@ -58,6 +59,7 @@ public class MainActivity extends ActionBarActivity {
 
     BroadcastReceiver receiver;
 
+
     @Override
 
     protected void onCreate(Bundle savedInstanceState) {
@@ -103,16 +105,16 @@ public class MainActivity extends ActionBarActivity {
         SharedPreferences settings = getSharedPreferences(PREFS_NAME, 0);
 
         listPrefs = new ArrayList<Boolean>();
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_messages_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_on_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_cam_off_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_messages_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_silent_mode_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_normal_mode_key), true));
+        listPrefs.add(settings.getBoolean(getString(R.string.pref_set_alarm_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_on_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_wifi_off_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_connection_on_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_connection_off_key), true));
-        listPrefs.add(settings.getBoolean(getString(R.string.pref_set_alarm_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_time_key), true));
         listPrefs.add(settings.getBoolean(getString(R.string.pref_control_day_key), true));
 
@@ -294,6 +296,10 @@ public class MainActivity extends ActionBarActivity {
 
     public void stopServer() {
         serverStatus = false;
+        if(ShortcutService.mAudioManager!=null) {
+            ShortcutService.mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+            ShortcutService.mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        }
         if (mBound) {
             unbindService(mConnection);
             mBound = false;
@@ -357,6 +363,11 @@ public class MainActivity extends ActionBarActivity {
     @Override
     protected void onDestroy() {
         removeNotification();
+
+        if(ShortcutService.mAudioManager!=null) {
+            ShortcutService.mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+            ShortcutService.mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+        }
         super.onDestroy();
 
     }

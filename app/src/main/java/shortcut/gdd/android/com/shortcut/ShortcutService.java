@@ -40,7 +40,7 @@ import java.util.Map;
 public class ShortcutService extends Service implements TextToSpeech.OnInitListener, TextToSpeech.OnUtteranceCompletedListener
 {
     private static final String TAG = ShortcutService.class.getSimpleName();
-    protected static AudioManager mAudioManager;
+    public static AudioManager mAudioManager;
     protected SpeechRecognizer mSpeechRecognizer;
     protected Intent mSpeechRecognizerIntent;
     protected final Messenger mServerMessenger = new Messenger(new IncomingHandler(this));
@@ -222,7 +222,6 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-
         if(cam != null){
             cam.release();
             cam = null;
