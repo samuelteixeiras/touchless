@@ -4,7 +4,7 @@
         android:radius="29dp"
         />
     <solid
-        android:color="@color/shortcut_btn_main"
+        android:color="@color/shortcut_base"
         />
     <padding
         android:left="0dp"
@@ -13,7 +13,7 @@
         android:bottom="0dp"
         />
     <size
-        android:width="270dp"
+        android:width="40dp"
         android:height="40dp"
         />
 

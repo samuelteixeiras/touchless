@@ -34,6 +34,7 @@
         </activity>
         <activity
             android:name=".AboutActivity"
+            android:screenOrientation="portrait"
             android:label="@string/action_about"
             android:parentActivityName=".MainActivity"
             android:theme="@style/AboutTheme">
@@ -42,7 +43,24 @@
                 android:value="shortcut.gdd.android.com.shortcut.MainActivity" />
         </activity>
 
+        <activity
+            android:name=".QeaDisplayActivity"
+            android:screenOrientation="portrait"
+            android:label="@string/action_qea"
+            android:parentActivityName=".MainActivity"
+            android:theme="@style/AboutTheme">
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value="shortcut.gdd.android.com.shortcut.MainActivity" />
+        </activity>
+
         <service android:name=".ShortcutService" />
+
+        <provider
+            android:authorities="@string/content_authority"
+            android:name=".data.QeaProvider"
+            android:exported="false"
+            android:syncable="true" />
     </application>
 
 </manifest>

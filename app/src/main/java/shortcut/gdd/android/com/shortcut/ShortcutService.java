@@ -224,6 +224,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         }
 
         if(tts!=null) {
+
             tts.stop();
             tts.shutdown();
             Log.d(TAG, " tts destroy");
@@ -700,6 +701,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+            soundPool.stop(okSound);
             soundPool.play(failSound, 1f, 1f, 1, 0, 1f);
             Log.d("Test", "Played fail sound >>" + msg);
     }
@@ -711,6 +713,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+            soundPool.stop(failSound);
             soundPool.play(okSound, 1f, 1f, 1, 0, 1f);
             Log.d("Test", "Played ok sound");
     }

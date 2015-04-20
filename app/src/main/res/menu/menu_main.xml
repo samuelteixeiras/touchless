@@ -6,5 +6,9 @@
         android:title="@string/action_about"
         android:orderInCategory="100"
         app:showAsAction="ifRoom" />
+    <item android:id="@+id/action_qea"
+        android:title="@string/action_qea"
+        android:orderInCategory="200"
+        app:showAsAction="ifRoom" />
 
 </menu>

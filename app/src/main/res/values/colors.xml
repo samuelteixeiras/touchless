@@ -9,6 +9,7 @@
     <color name="shortcut_base">#A5CF10</color>
     <color name="shortcut_dark_base">#99CC45</color>
     <color name="shortcut_btn">#c02942</color>
+    <color name="shortcut_btn_main">#9ae40a0a</color>
     <color name="shortcut_text">#f76110</color>
 
     <color name="shortcut_pallete_1">#F16438</color>

@@ -138,6 +138,10 @@ public class MainActivity extends ActionBarActivity {
             startActivity(new Intent(this, AboutActivity.class));
             return true;
         }
+        if (id == R.id.action_qea) {
+            startActivity(new Intent(this, QeaDisplayActivity.class));
+            return true;
+        }
 
         return super.onOptionsItemSelected(item);
     }
@@ -214,7 +218,6 @@ public class MainActivity extends ActionBarActivity {
             // Attach the adapter to a ListView
             mListView = (ListView) rootView.findViewById(R.id.listview_shorcut);
             mListView.setAdapter(adapter);
-            getActivity();
             return rootView;
         }
 
