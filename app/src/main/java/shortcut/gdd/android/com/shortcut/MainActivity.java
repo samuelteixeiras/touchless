@@ -312,9 +312,6 @@ public class MainActivity extends ActionBarActivity {
         super.onStart();
         removeNotification();
 
-        bindService(new Intent(this, ShortcutService.class), mConnection,
-                Context.BIND_AUTO_CREATE);
-
     }
 
     @Override
