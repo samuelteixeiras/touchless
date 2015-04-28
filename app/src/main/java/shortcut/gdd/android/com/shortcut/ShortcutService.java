@@ -220,7 +220,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
     public void onDestroy()
     {
 
-
+        mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
         if(cam != null){
@@ -363,6 +363,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
             Log.d(TAG, "onResults");
 
+            mIsStreamMute = false;
             mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
             mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
 
