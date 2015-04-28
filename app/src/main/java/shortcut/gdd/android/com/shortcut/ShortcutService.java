@@ -23,6 +23,7 @@ import android.speech.RecognizerIntent;
 import android.speech.SpeechRecognizer;
 import android.speech.tts.TextToSpeech;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.lang.ref.WeakReference;
 import java.text.SimpleDateFormat;
@@ -352,6 +353,7 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
             }else{
                 Log.d(TAG, "onReadyForSpeech ??"); 
             }
+            Toast.makeText(mContext,"onReadyForSpeech",Toast.LENGTH_SHORT).show();
             Log.d(TAG, "onReadyForSpeech"); 
         }
 
@@ -359,7 +361,11 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         public void onResults(Bundle results)
         {
             ArrayList<String> list = results.getStringArrayList(SpeechRecognizer.RESULTS_RECOGNITION);
-            Log.d(TAG, "onResults"); 
+            Log.d(TAG, "onResults");
+
+            mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
+            mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
+
             // get the audio and compare with waited strings
             String aux = "";
             Boolean resultOk = false;
@@ -367,236 +373,221 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
 
                 Log.d(TAG, "item  >"+ item +"<");
 
-                // modify item case set alarm found
-                if(item.contains("set an alarm for")){
-                    aux = item;
-                    item   = "set an alarm for";
-                } else if(item.contains("set timer for")){
-                    aux = item;
-                    item   = "set timer for";
-                }
+                if (item.startsWith("android") )
+                {
 
-                if(firstTime){
-                    switch (item) {
-                        case "ok google":
-                            firstTime = false;
-                            resultOk = true;
-                            break search;
+                    item = item.replace("android","");
+                    item = item.trim();
+
+                    // modify item case set alarm found
+                    if(item.contains("set an alarm for")){
+                        aux = item;
+                        item   = "set an alarm for";
+                    } else if(item.contains("set timer for")){
+                        aux = item;
+                        item   = "set timer for";
                     }
-                }else switch (item) {
 
-                    case "what time is it":
-                        if(!settings.getBoolean(getString(R.string.pref_control_time_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        SimpleDateFormat sdfHour = new SimpleDateFormat("HH");
-                        SimpleDateFormat sdfMinutes = new SimpleDateFormat("mm");
-                        long time = new Date().getTime();
-                        String strHour = sdfHour.format(time);
-                        String strMinutes = sdfMinutes.format(time);
-                        String speakTime = "Time now: " + strHour + " hours and " + strMinutes + " minutes ";
+                    Log.d(TAG, "item replaced  >"+ item +"<");
 
-                        utility.textToSpeech(speakTime, mAudioManager, tts);
-                        firstTime = true;
-                        break search;
+                    switch (item) {
 
-                    case "what day is it":
-                        if(!settings.getBoolean(getString(R.string.pref_control_day_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        SimpleDateFormat day = new SimpleDateFormat("dd");
-                        SimpleDateFormat month = new SimpleDateFormat("MMMM");
-                        SimpleDateFormat year = new SimpleDateFormat("yyyy");
-                        String strDay = day.format(new Date().getTime());
-                        String strMonth = month.format(new Date().getTime());
-                        String strYear = year.format(new Date().getTime());
-                        String speakDate = "Today is:" + strDay + " " + strMonth + " " + strYear;
-
-                        utility.textToSpeech(speakDate, mAudioManager, tts);
-                        firstTime = true;
-                        break search;
-
-                        /*
-                        testing
-                        case "take a picture":
+                        case "what time is it":
+                            if(!settings.getBoolean(getString(R.string.pref_control_time_key), true)){
+                                continue;
+                            }
                             resultOk = true;
-                            utility.capturePhoto();
+                            SimpleDateFormat sdfHour = new SimpleDateFormat("HH");
+                            SimpleDateFormat sdfMinutes = new SimpleDateFormat("mm");
+                            long time = new Date().getTime();
+                            String strHour = sdfHour.format(time);
+                            String strMinutes = sdfMinutes.format(time);
+                            String speakTime = "Time now: " + strHour + " hours and " + strMinutes + " minutes ";
+
+                            utility.textToSpeech(speakTime, mAudioManager, tts);
                             firstTime = true;
-                            break search;*/
+                            break search;
 
-                    case "set an alarm for":
-                        if(!settings.getBoolean(getString(R.string.pref_set_alarm_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        createAlarm(aux, item);
-                        firstTime = true;
-                        break search;
+                        case "what day is it":
+                            if(!settings.getBoolean(getString(R.string.pref_control_day_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            SimpleDateFormat day = new SimpleDateFormat("dd");
+                            SimpleDateFormat month = new SimpleDateFormat("MMMM");
+                            SimpleDateFormat year = new SimpleDateFormat("yyyy");
+                            String strDay = day.format(new Date().getTime());
+                            String strMonth = month.format(new Date().getTime());
+                            String strYear = year.format(new Date().getTime());
+                            String speakDate = "Today is:" + strDay + " " + strMonth + " " + strYear;
 
-                    /* only in api lv 19 , current 16
-                    case "set timer for":
-                        resultOk = true;
-                        startTimer(aux, item);
-                        firstTime = true;
-                        break search;
-                    */
-                    /* not implemented yet
-                    case "weather":
-                        resultOk = true;
-                        utility.textToSpeech("weather", mAudioManager, tts);
-                        firstTime = true;
-                        break search;
-                    */
-                    case "read messages":
-                        if(!settings.getBoolean(getString(R.string.pref_messages_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                       // utility.readMessagens(mAudioManager, tts,getContentResolver());
-                        firstTime = true;
-                        break search;
+                            utility.textToSpeech(speakDate, mAudioManager, tts);
+                            firstTime = true;
+                            break search;
 
-                    case "lights on":
-                    case "light on":
-                        if(!settings.getBoolean(getString(R.string.pref_cam_on_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        if (!lightStatus) {
-                            Log.d(TAG, "light on");
-                            Handler handler = new Handler();
-                            handler.postDelayed(new Runnable() {
-                                public void run() {
-                                    cam = Camera.open();
-                                    utility.turnOnFlashLight(getPackageManager(), cam);
-                                    lightStatus = true;
-                                }
-                            }, 1000);
-                        }
-                        firstTime = true;
-                        break search;
-
-                    case "lights off":
-                    case "light off":
-                        if(!settings.getBoolean(getString(R.string.pref_cam_off_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        if (lightStatus) {
-                            Log.d(TAG, "light off");
-                            Handler handler = new Handler();
-                            handler.postDelayed(new Runnable() {
-                                public void run() {
-                                    utility.turnOffFlashLight(getPackageManager(), cam);
-                                    lightStatus = false;
-                                }
-                            }, 1000);
-                        }
-                        firstTime = true;
-                        break search;
-
-                    case "silent mode":
-                        if(!settings.getBoolean(getString(R.string.pref_silent_mode_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        utility.ringerModeSilent(mobilemode, tts);
-                        firstTime = true;
-                        break search;
-
-                    case "normal mode":
-                        if(!settings.getBoolean(getString(R.string.pref_normal_mode_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        utility.ringerModeNormal(mobilemode);
-                        firstTime = true;
-                        break search;
-
-                    case "wifi on":
-                        if(!settings.getBoolean(getString(R.string.pref_control_wifi_on_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        firstTime = true;
-                        utility.wifiChange(true, mContext);
-                        break search;
-
-                    case "wifi off":
-                        if(!settings.getBoolean(getString(R.string.pref_control_wifi_off_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        firstTime = true;
-                        utility.wifiChange(false, mContext);
-                        break search;
-
-                    case "connection on":
-                        if(!settings.getBoolean(getString(R.string.pref_control_connection_on_key), true)){
-                            continue;
-                        }
-                        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-                        resultOk = true;
-                        firstTime = true;
-                        utility.connectionChange(true,dataManager);
-                        break search;
-
-                    case "connection off":
-                        if(!settings.getBoolean(getString(R.string.pref_control_connection_off_key), true)){
-                            continue;
-                        }
-                        resultOk = true;
-                        firstTime = true;
-                        dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
-                        utility.connectionChange(false,dataManager);
-                        break search;
-
-                    default:
-                        // command not recognized, restart
-                        for(Map.Entry<String, String> entry : qeaHashMap.entrySet()) {
-                            String key = entry.getKey();
-                            String value = entry.getValue();
-
-                            if(item.equals(key)){
+                            /*
+                            testing
+                            case "take a picture":
                                 resultOk = true;
-                                utility.textToSpeech(value, mAudioManager, tts);
+                                utility.capturePhoto();
                                 firstTime = true;
-                                break search;
+                                break search;*/
+
+                        case "set an alarm for":
+                            if(!settings.getBoolean(getString(R.string.pref_set_alarm_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            createAlarm(aux, item);
+                            firstTime = true;
+                            break search;
+
+                        /* only in api lv 19 , current 16
+                        case "set timer for":
+                            resultOk = true;
+                            startTimer(aux, item);
+                            firstTime = true;
+                            break search;
+                        */
+                        /* not implemented yet
+                        case "weather":
+                            resultOk = true;
+                            utility.textToSpeech("weather", mAudioManager, tts);
+                            firstTime = true;
+                            break search;
+                        */
+                        case "read messages":
+                            if(!settings.getBoolean(getString(R.string.pref_messages_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                           // utility.readMessagens(mAudioManager, tts,getContentResolver());
+                            firstTime = true;
+                            break search;
+
+                        case "lights on":
+                        case "light on":
+                            if(!settings.getBoolean(getString(R.string.pref_cam_on_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            if (!lightStatus) {
+                                Log.d(TAG, "light on");
+                                cam = Camera.open();
+                                utility.turnOnFlashLight(getPackageManager(), cam);
+                                lightStatus = true;
+                            }
+                            firstTime = true;
+                            break search;
+
+                        case "lights off":
+                        case "light off":
+                            if(!settings.getBoolean(getString(R.string.pref_cam_off_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            if (lightStatus) {
+                                Log.d(TAG, "light off");
+                                utility.turnOffFlashLight(getPackageManager(), cam);
+                                lightStatus = false;
+                            }
+                            firstTime = true;
+                            break search;
+
+                        case "silent mode":
+                            if(!settings.getBoolean(getString(R.string.pref_silent_mode_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            utility.ringerModeSilent(mobilemode, tts);
+                            firstTime = true;
+                            break search;
+
+                        case "normal mode":
+                            if(!settings.getBoolean(getString(R.string.pref_normal_mode_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            utility.ringerModeNormal(mobilemode);
+                            firstTime = true;
+                            break search;
+
+                        case "wifi on":
+                            if(!settings.getBoolean(getString(R.string.pref_control_wifi_on_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            firstTime = true;
+                            utility.wifiChange(true, mContext);
+                            break search;
+
+                        case "wifi off":
+                            if(!settings.getBoolean(getString(R.string.pref_control_wifi_off_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            firstTime = true;
+                            utility.wifiChange(false, mContext);
+                            break search;
+
+                        case "connection on":
+                            if(!settings.getBoolean(getString(R.string.pref_control_connection_on_key), true)){
+                                continue;
+                            }
+                            dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+                            resultOk = true;
+                            firstTime = true;
+                            utility.connectionChange(true,dataManager);
+                            break search;
+
+                        case "connection off":
+                            if(!settings.getBoolean(getString(R.string.pref_control_connection_off_key), true)){
+                                continue;
+                            }
+                            resultOk = true;
+                            firstTime = true;
+                            dataManager  = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+                            utility.connectionChange(false,dataManager);
+                            break search;
+
+                        default:
+                            // command not recognized, restart
+                            for(Map.Entry<String, String> entry : qeaHashMap.entrySet()) {
+                                String key = entry.getKey();
+                                String value = entry.getValue();
+
+                                if(item.equals(key)){
+                                    resultOk = true;
+                                    utility.textToSpeech(value, mAudioManager, tts);
+                                    firstTime = true;
+                                    break search;
+                                }
+
                             }
 
-                        }
-
-                        firstTime = true;
-                        break;
-                }
-            }
-
-
-            if(firstTime){
-                // delay for play sound
-                long timeToWait = 2000;
-                if(!resultOk) {
-                    playFailSound("result fail");
-                }else{
-                    playOkSound();
-                    timeToWait*=2;
-                }
-                Handler handler = new Handler();
-                handler.postDelayed(new Runnable() {
-                    public void run() {
-                        restartListening();
-                        Log.d(TAG, " 2 restartListening  >" +firstTime );
+                            firstTime = true;
+                            break;
                     }
-                }, timeToWait);
 
-
-            }else {
-                startListening();
-                Log.d(TAG, " 1 startListening >" +firstTime );
-
+                }
             }
+
+            // delay for play sound
+            long timeToWait = 1000;
+            if(!resultOk) {
+                playFailSound("result fail");
+            }else{
+                playOkSound();
+            }
+
+            Handler handler = new Handler();
+            handler.postDelayed(new Runnable() {
+                public void run() {
+                    restartListening();
+                    Log.d(TAG, " 2 restartListening  >" +firstTime );
+                }
+            }, timeToWait);
+
 
         }
 
@@ -764,9 +755,10 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-            soundPool.stop(okSound);
-            soundPool.play(failSound, 1f, 1f, 1, 0, 1f);
-            Log.d("Test", "Played fail sound >>" + msg);
+        soundPool.stop(okSound);
+        soundPool.play(failSound, 1f, 1f, 1, 0, 1f);
+        Log.d("Test", "Played fail sound >>" + msg);
+
     }
 
     /**
@@ -776,9 +768,9 @@ public class ShortcutService extends Service implements TextToSpeech.OnInitListe
         mIsStreamMute = false;
         mAudioManager.setStreamMute(AudioManager.STREAM_MUSIC, false);
         mAudioManager.setStreamMute(AudioManager.STREAM_SYSTEM, false);
-            soundPool.stop(failSound);
-            soundPool.play(okSound, 1f, 1f, 1, 0, 1f);
-            Log.d("Test", "Played ok sound");
+        soundPool.stop(failSound);
+        soundPool.play(okSound, 1f, 1f, 1, 0, 1f);
+        Log.d("Test", "Played ok sound");
     }
 
 }
